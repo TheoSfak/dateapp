@@ -28,6 +28,8 @@ return [
     'GET /profile'           => [ProfileController::class, 'show'],
     'GET /profile/edit'      => [ProfileController::class, 'edit'],
     'POST /profile/update'   => [ProfileController::class, 'update'],
+    'POST /profile/interests'     => [ProfileController::class, 'updateInterests'],
+    'POST /profile/dealbreakers'  => [ProfileController::class, 'updateDealbreakers'],
     'POST /profile/photo'    => [ProfileController::class, 'uploadPhoto'],
     'POST /profile/photo/primary' => [ProfileController::class, 'setPrimaryPhoto'],
     'POST /profile/photo/delete'  => [ProfileController::class, 'deletePhoto'],

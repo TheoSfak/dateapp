@@ -42,7 +42,8 @@
 
         // ─── Geolocation ───────────────────────────────
         initGeoDetect();
-
+        // ─── Interest Tag Picker ───────────────────────────
+        initInterestPicker();
         // ─── Filter Panel ──────────────────────────────
         const filterBtn = document.querySelector('.filter-toggle');
         const filterPanel = document.querySelector('.filter-panel');
@@ -344,6 +345,38 @@
             }, () => {
                 btn.textContent = 'Detection failed';
                 btn.disabled = false;
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // INTEREST TAG PICKER
+    // ═══════════════════════════════════════════════════════
+    function initInterestPicker() {
+        const tags = document.querySelectorAll('.interest-tag');
+        if (!tags.length) return;
+        const MAX = 10;
+
+        tags.forEach(tag => {
+            const cb = tag.querySelector('input[type="checkbox"]');
+            tag.addEventListener('click', (e) => {
+                // Prevent form submit
+                e.preventDefault();
+
+                if (cb.checked) {
+                    cb.checked = false;
+                    tag.classList.remove('selected');
+                } else {
+                    const checked = document.querySelectorAll('.interest-tag input:checked').length;
+                    if (checked >= MAX) {
+                        // Shake the tag
+                        tag.style.animation = 'shake 0.3s ease';
+                        setTimeout(() => tag.style.animation = '', 300);
+                        return;
+                    }
+                    cb.checked = true;
+                    tag.classList.add('selected');
+                }
             });
         });
     }

@@ -61,4 +61,130 @@ class Profile extends Model
         if (!$dob) return null;
         return (int) date_diff(date_create($dob), date_create('today'))->y;
     }
+
+    // ── Interest Tags ──────────────────────────────────────
+
+    /**
+     * Get all available interest tags grouped by category.
+     */
+    public static function getAllInterests(): array
+    {
+        $stmt = static::db()->query("SELECT * FROM interests ORDER BY category, name");
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Get interest IDs for a user.
+     */
+    public static function getUserInterestIds(int $userId): array
+    {
+        $stmt = static::db()->query(
+            "SELECT interest_id FROM user_interests WHERE user_id = ?",
+            [$userId]
+        );
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Save user interests (max 10).
+     */
+    public static function saveInterests(int $userId, array $interestIds): void
+    {
+        // Delete existing
+        static::db()->query("DELETE FROM user_interests WHERE user_id = ?", [$userId]);
+
+        // Insert new (max 10)
+        $ids = array_slice(array_map('intval', $interestIds), 0, 10);
+        foreach ($ids as $id) {
+            static::db()->query(
+                "INSERT IGNORE INTO user_interests (user_id, interest_id) VALUES (?, ?)",
+                [$userId, $id]
+            );
+        }
+
+        // Update profile completeness
+        self::recalcCompleteness($userId);
+    }
+
+    // ── Deal-Breakers ──────────────────────────────────────
+
+    /**
+     * Get user's deal-breakers.
+     */
+    public static function getDealbreakers(int $userId): array
+    {
+        $stmt = static::db()->query(
+            "SELECT field, value FROM user_dealbreakers WHERE user_id = ?",
+            [$userId]
+        );
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Save deal-breaker. Free users: 1 max, premium: unlimited.
+     */
+    public static function saveDealbreakers(int $userId, array $dealbreakers, bool $isPremium): bool
+    {
+        $maxAllowed = $isPremium ? 100 : 1;
+        $dealbreakers = array_slice($dealbreakers, 0, $maxAllowed);
+
+        // Delete existing
+        static::db()->query("DELETE FROM user_dealbreakers WHERE user_id = ?", [$userId]);
+
+        $allowedFields = ['smoking'];
+        foreach ($dealbreakers as $db) {
+            $field = $db['field'] ?? '';
+            $value = $db['value'] ?? '';
+            if (!in_array($field, $allowedFields) || $value === '') continue;
+            static::db()->query(
+                "INSERT IGNORE INTO user_dealbreakers (user_id, field, value) VALUES (?, ?, ?)",
+                [$userId, $field, $value]
+            );
+        }
+        return true;
+    }
+
+    // ── Profile Completeness ───────────────────────────────
+
+    /**
+     * Recalculate and store profile completeness (0-100).
+     */
+    public static function recalcCompleteness(int $userId): int
+    {
+        $profile = static::getByUserId($userId);
+        $score = 0;
+
+        if (!empty($profile['name']))              $score += 10;
+        if (!empty($profile['bio']))               $score += 15;
+        if (!empty($profile['date_of_birth']))     $score += 10;
+        if (!empty($profile['gender']) && !empty($profile['looking_for'])) $score += 10;
+        if (!empty($profile['relationship_goal']) && $profile['relationship_goal'] !== 'undecided') $score += 10;
+        if (!empty($profile['height_cm']))         $score += 5;
+        if (!empty($profile['smoking']) || !empty($profile['drinking'])) $score += 5;
+
+        // Photo count
+        $photoCount = (int)static::db()->query(
+            "SELECT COUNT(*) FROM photos WHERE user_id = ?", [$userId]
+        )->fetchColumn();
+        if ($photoCount >= 1) $score += 20;
+        if ($photoCount >= 3) $score += 10;
+
+        // Interest count
+        $interestCount = (int)static::db()->query(
+            "SELECT COUNT(*) FROM user_interests WHERE user_id = ?", [$userId]
+        )->fetchColumn();
+        if ($interestCount >= 3) $score += 5;
+
+        $score = min(100, $score);
+
+        // Upsert user_scores
+        static::db()->query(
+            "INSERT INTO user_scores (user_id, profile_completeness, photo_count)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE profile_completeness = ?, photo_count = ?",
+            [$userId, $score, $photoCount, $score, $photoCount]
+        );
+
+        return $score;
+    }
 }

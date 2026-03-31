@@ -19,6 +19,12 @@ class Interaction extends Model
             [$actorId, $targetId, $action]
         );
 
+        // Update target's ELO score
+        self::updateElo($targetId, $action);
+
+        // Update target's like ratio
+        self::updateLikeRatio($targetId);
+
         // Check for mutual like (match)
         if ($action === 'like' || $action === 'superlike') {
             $stmt = static::db()->query(
@@ -39,6 +45,69 @@ class Interaction extends Model
         }
 
         return $action;
+    }
+
+    /**
+     * Soft ELO update for the target user after receiving a swipe.
+     */
+    private static function updateElo(int $targetId, string $action): void
+    {
+        // Ensure user_scores row exists
+        static::db()->query(
+            "INSERT IGNORE INTO user_scores (user_id) VALUES (?)",
+            [$targetId]
+        );
+
+        $row = static::db()->query(
+            "SELECT elo_score FROM user_scores WHERE user_id = ?",
+            [$targetId]
+        )->fetch();
+
+        $elo = (float)($row['elo_score'] ?? 1000);
+        $expected = $elo / 2000; // normalized expectation
+
+        switch ($action) {
+            case 'like':
+                $delta = 16 * (1 - $expected);
+                break;
+            case 'superlike':
+                $delta = 24 * (1 - $expected); // K*1.5
+                break;
+            case 'dislike':
+                $delta = 8 * (0 - $expected); // smaller penalty
+                break;
+            default:
+                return;
+        }
+
+        $newElo = max(100, min(2000, $elo + $delta));
+
+        static::db()->query(
+            "UPDATE user_scores SET elo_score = ? WHERE user_id = ?",
+            [round($newElo, 2), $targetId]
+        );
+    }
+
+    /**
+     * Recalculate like_ratio for target: likes_received / total_interactions_received
+     */
+    private static function updateLikeRatio(int $targetId): void
+    {
+        $stats = static::db()->query(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN action_type IN ('like','superlike') THEN 1 ELSE 0 END) AS likes
+             FROM interactions WHERE target_id = ?",
+            [$targetId]
+        )->fetch();
+
+        $total = (int)$stats['total'];
+        $ratio = $total > 0 ? round((int)$stats['likes'] / $total, 4) : 0.5;
+
+        static::db()->query(
+            "UPDATE user_scores SET like_ratio = ? WHERE user_id = ?",
+            [$ratio, $targetId]
+        );
     }
 
     /**

@@ -26,6 +26,17 @@ abstract class Controller
         if (!Session::get('user_id')) {
             $this->redirect('/login');
         }
+
+        // Update last_active_at (throttle to once per minute via session)
+        $lastPing = Session::get('_last_active_ping', 0);
+        if (time() - $lastPing > 60) {
+            Database::getInstance()->query(
+                "UPDATE users SET last_active_at = NOW() WHERE id = ?",
+                [Session::get('user_id')]
+            );
+            Session::set('_last_active_ping', time());
+        }
+
         return [
             'id'    => Session::get('user_id'),
             'email' => Session::get('user_email'),

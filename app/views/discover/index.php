@@ -37,6 +37,12 @@
                         <?= strtoupper(substr($person['name'], 0, 1)) ?>
                     </div>
                 <?php endif; ?>
+
+                <!-- Compatibility Badge -->
+                <?php if (!empty($person['compatibility'])): ?>
+                <div class="compatibility-badge"><?= (int)$person['compatibility'] ?>%</div>
+                <?php endif; ?>
+
                 <div class="swipe-card-gradient"></div>
                 <div class="swipe-card-info">
                     <h2><?= htmlspecialchars($person['name'], ENT_QUOTES, 'UTF-8') ?><?php if ($person['age']): ?>, <?= (int)$person['age'] ?><?php endif; ?></h2>
@@ -46,6 +52,24 @@
                     </p>
                     <?php if (!empty($person['bio'])): ?>
                         <p class="swipe-card-bio"><?= htmlspecialchars(mb_strimwidth($person['bio'], 0, 120, '...'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
+
+                    <!-- Match Reasons -->
+                    <?php if (!empty($person['match_reasons'])): ?>
+                    <div class="match-reasons">
+                        <?php foreach ($person['match_reasons'] as $reason): ?>
+                            <span class="reason-pill"><?= htmlspecialchars($reason, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Shared Interests -->
+                    <?php if (!empty($person['shared_interest_names'])): ?>
+                    <div class="shared-interests">
+                        <?php foreach (array_slice(explode(',', $person['shared_interest_names']), 0, 4) as $tag): ?>
+                            <span class="interest-pill"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endforeach; ?>
+                    </div>
                     <?php endif; ?>
                 </div>
                 <div class="swipe-stamp swipe-stamp-like">LIKE</div>

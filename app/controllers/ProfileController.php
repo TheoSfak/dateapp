@@ -29,9 +29,21 @@ class ProfileController extends Controller
         $profile = Profile::getByUserId($user['id']);
         $photos  = Photo::getByUserId($user['id']);
 
+        // Interest tags
+        $allInterests = Profile::getAllInterests();
+        $userInterestIds = Profile::getUserInterestIds($user['id']);
+
+        // Deal-breakers
+        $dealbreakers = Profile::getDealbreakers($user['id']);
+        $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
+
         View::render('profile/edit', [
-            'profile' => $profile,
-            'photos'  => $photos,
+            'profile'          => $profile,
+            'photos'           => $photos,
+            'allInterests'     => $allInterests,
+            'userInterestIds'  => $userInterestIds,
+            'dealbreakers'     => $dealbreakers,
+            'isPremium'        => $isPremium,
         ]);
     }
 
@@ -124,6 +136,9 @@ class ProfileController extends Controller
             'longitude'         => $lng,
         ]);
 
+        // Recalculate profile completeness
+        Profile::recalcCompleteness($user['id']);
+
         \App\Core\Session::flash('success', 'Profile updated successfully!');
         $this->redirect('/profile');
     }
@@ -167,6 +182,47 @@ class ProfileController extends Controller
         $photoId = (int)($_POST['photo_id'] ?? 0);
         Photo::delete($photoId, $user['id']);
         \App\Core\Session::flash('success', 'Photo deleted.');
+        $this->redirect('/profile/edit');
+    }
+
+    /**
+     * Save user interests (AJAX or form POST).
+     */
+    public function updateInterests(): void
+    {
+        $user = $this->requireAuth();
+        CSRF::validate();
+
+        $ids = $_POST['interests'] ?? [];
+        if (!is_array($ids)) $ids = [];
+
+        // Validate: only allow valid integer IDs
+        $ids = array_filter(array_map('intval', $ids), fn($id) => $id > 0);
+
+        Profile::saveInterests($user['id'], $ids);
+        \App\Core\Session::flash('success', 'Interests updated!');
+        $this->redirect('/profile/edit');
+    }
+
+    /**
+     * Save user deal-breakers.
+     */
+    public function updateDealbreakers(): void
+    {
+        $user = $this->requireAuth();
+        CSRF::validate();
+
+        $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
+
+        $dealbreakers = [];
+        $smokingVal = $_POST['dealbreaker_smoking'] ?? '';
+        $allowedSmoking = ['never', 'sometimes', 'regularly'];
+        if (in_array($smokingVal, $allowedSmoking)) {
+            $dealbreakers[] = ['field' => 'smoking', 'value' => $smokingVal];
+        }
+
+        Profile::saveDealbreakers($user['id'], $dealbreakers, $isPremium);
+        \App\Core\Session::flash('success', 'Deal-breakers updated!');
         $this->redirect('/profile/edit');
     }
 

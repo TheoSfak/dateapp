@@ -2038,3 +2038,135 @@ select { cursor: pointer; }
     .landing-section-inner { padding: 3rem 1rem; }
     .landing-section-title { font-size: 1.75rem; }
 }
+
+/* ============================================================
+   Match Algorithm UI – Compatibility, Reasons, Interests, Deal-Breakers
+   ============================================================ */
+
+/* ─── Compatibility Badge ───────────────────────────────── */
+.compatibility-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--white);
+    font-size: 0.95rem;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    letter-spacing: -0.02em;
+}
+
+/* ─── Match Reason Pills ───────────────────────────────── */
+.match-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.reason-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--white);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+/* ─── Shared Interest Pills on Card ─────────────────────── */
+.shared-interests {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+.interest-pill {
+    display: inline-block;
+    background: rgba(230,57,70,0.7);
+    color: var(--white);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+/* ─── Interest Tag Picker (Profile Edit) ────────────────── */
+.interests-section h3 { margin-bottom: 1rem; }
+.interests-section .text-muted { font-size: 0.8rem; font-weight: 400; }
+
+.interest-category {
+    margin-bottom: 1.25rem;
+}
+.interest-category h4 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+}
+
+.interest-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.interest-tag {
+    cursor: pointer;
+    user-select: none;
+}
+.interest-tag input[type="checkbox"] {
+    display: none;
+}
+.interest-tag-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--gray-light);
+    background: var(--white);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all var(--transition);
+    color: var(--dark);
+}
+.interest-tag:hover .interest-tag-content {
+    border-color: var(--primary-light);
+    background: rgba(230,57,70,0.04);
+}
+.interest-tag.selected .interest-tag-content,
+.interest-tag input:checked + .interest-tag-content {
+    border-color: var(--primary);
+    background: rgba(230,57,70,0.08);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+.interest-emoji { font-size: 1rem; }
+.interest-name { font-size: 0.82rem; }
+
+/* ─── Deal-Breaker Section (Profile Edit) ───────────────── */
+.dealbreaker-section h3 { margin-bottom: 1rem; }
+.dealbreaker-section .text-muted { font-size: 0.8rem; font-weight: 400; }
+
+/* ─── Responsive Adjustments ────────────────────────────── */
+@media (max-width: 768px) {
+    .interest-grid { gap: 6px; }
+    .interest-tag-content { padding: 5px 10px; font-size: 0.8rem; }
+    .compatibility-badge { font-size: 0.85rem; padding: 5px 11px; }
+    .reason-pill { font-size: 0.68rem; padding: 2px 8px; }
+}

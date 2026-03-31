@@ -101,6 +101,58 @@
         <button type="submit" class="btn btn-primary btn-lg btn-block">Save Changes</button>
     </form>
 
+    <!-- Interest Tags -->
+    <form method="POST" action="/dateapp/profile/interests" class="form-card interests-section">
+        <?= \App\Core\CSRF::field() ?>
+        <h3>My Interests <span class="text-muted">(pick up to 10)</span></h3>
+        <?php
+            $grouped = [];
+            foreach (($allInterests ?? []) as $tag) {
+                $grouped[$tag['category']][] = $tag;
+            }
+        ?>
+        <?php foreach ($grouped as $category => $tags): ?>
+            <div class="interest-category">
+                <h4><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></h4>
+                <div class="interest-grid">
+                    <?php foreach ($tags as $tag): ?>
+                        <label class="interest-tag <?= in_array($tag['id'], $userInterestIds ?? []) ? 'selected' : '' ?>">
+                            <input type="checkbox" name="interests[]" value="<?= (int)$tag['id'] ?>"
+                                <?= in_array($tag['id'], $userInterestIds ?? []) ? 'checked' : '' ?>>
+                            <span class="interest-tag-content">
+                                <span class="interest-emoji"><?= $tag['emoji'] ?></span>
+                                <span class="interest-name"><?= htmlspecialchars($tag['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+        <button type="submit" class="btn btn-primary btn-block">Save Interests</button>
+    </form>
+
+    <!-- Deal-Breakers -->
+    <form method="POST" action="/dateapp/profile/dealbreakers" class="form-card dealbreaker-section">
+        <?= \App\Core\CSRF::field() ?>
+        <h3>Deal-Breakers <?php if (empty($isPremium)): ?><span class="text-muted">(1 max — go premium for more)</span><?php endif; ?></h3>
+        <div class="form-group">
+            <label for="dealbreaker_smoking">Smoking Preference</label>
+            <select id="dealbreaker_smoking" name="dealbreaker_smoking">
+                <option value="">No preference</option>
+                <?php
+                    $currentSmoking = '';
+                    foreach (($dealbreakers ?? []) as $db) {
+                        if ($db['field'] === 'smoking') $currentSmoking = $db['value'];
+                    }
+                ?>
+                <option value="never" <?= $currentSmoking === 'never' ? 'selected' : '' ?>>Must be: Never</option>
+                <option value="sometimes" <?= $currentSmoking === 'sometimes' ? 'selected' : '' ?>>Must be: Sometimes</option>
+                <option value="regularly" <?= $currentSmoking === 'regularly' ? 'selected' : '' ?>>Must be: Regularly</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-outline btn-block">Save Deal-Breakers</button>
+    </form>
+
     <div class="form-card photos-section">
         <h3>Photos (<?= count($photos) ?>/<?= \App\Core\Config::get('app.max_photos_per_user', 6) ?>)</h3>
 

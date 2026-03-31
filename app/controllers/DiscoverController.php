@@ -17,9 +17,9 @@ class DiscoverController extends Controller
         $user = $this->requireAuth();
 
         // Get filter params from query string or session with validation
-        $minAge = max(18, min(99, (int)($_GET['min_age'] ?? Session::get('filter_min_age', 18))));
-        $maxAge = max(18, min(99, (int)($_GET['max_age'] ?? Session::get('filter_max_age', 99))));
-        $maxDist = max(1, min(500, (int)($_GET['max_distance'] ?? Session::get('filter_max_distance', 100))));
+        $minAge = max(18, min(99, (int)($_GET['min_age'] ?? \App\Core\Session::get('filter_min_age', 18))));
+        $maxAge = max(18, min(99, (int)($_GET['max_age'] ?? \App\Core\Session::get('filter_max_age', 99))));
+        $maxDist = max(1, min(500, (int)($_GET['max_distance'] ?? \App\Core\Session::get('filter_max_distance', 100))));
         if ($minAge > $maxAge) { $minAge = 18; $maxAge = 99; }
 
         $filters = [
@@ -34,6 +34,14 @@ class DiscoverController extends Controller
         Session::set('filter_max_distance', $filters['max_distance']);
 
         $stack = Discovery::getStack($user['id'], $filters, 20);
+
+        // Compute match reasons for each profile
+        $stack = array_map(function ($person) {
+            $person['match_reasons'] = self::computeReasons($person);
+            $person['compatibility'] = (int)round((float)($person['total_score'] ?? 0));
+            return $person;
+        }, $stack);
+
         $swipesToday = Interaction::getTodaySwipeCount($user['id']);
         $userProfile = Profile::getByUserId($user['id']);
         $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
@@ -47,6 +55,50 @@ class DiscoverController extends Controller
             'isPremium'   => $isPremium,
             'hasProfile'  => !empty($userProfile['name']),
         ]);
+    }
+
+    /**
+     * Compute top 3 match reasons from score components.
+     */
+    private static function computeReasons(array $person): array
+    {
+        $components = [
+            ['key' => 'distance',  'score' => (float)($person['score_distance'] ?? 0),  'max' => 17, 'emoji' => '📍', 'label' => ''],
+            ['key' => 'age',       'score' => (float)($person['score_age'] ?? 0),       'max' => 17, 'emoji' => '🎂', 'label' => 'Age match'],
+            ['key' => 'interests', 'score' => (float)($person['score_interests'] ?? 0), 'max' => 17, 'emoji' => '🎯', 'label' => ''],
+            ['key' => 'lifestyle', 'score' => (float)($person['score_lifestyle'] ?? 0), 'max' => 17, 'emoji' => '💫', 'label' => 'Similar lifestyle'],
+            ['key' => 'elo',       'score' => (float)($person['score_elo'] ?? 0),       'max' => 16, 'emoji' => '⭐', 'label' => 'Popular profile'],
+            ['key' => 'freshness', 'score' => (float)($person['score_freshness'] ?? 0), 'max' => 16, 'emoji' => '🆕', 'label' => ''],
+        ];
+
+        // Custom labels based on data
+        foreach ($components as &$c) {
+            if ($c['key'] === 'distance') {
+                $dist = $person['distance'] ?? null;
+                $c['label'] = $dist !== null ? round($dist, 1) . ' km away' : 'Nearby';
+            }
+            if ($c['key'] === 'interests') {
+                $cnt = (int)($person['shared_interest_count'] ?? 0);
+                $c['label'] = $cnt > 0 ? $cnt . ' shared interest' . ($cnt > 1 ? 's' : '') : 'Common interests';
+            }
+            if ($c['key'] === 'freshness') {
+                $c['label'] = $c['score'] >= 15 ? 'Recently active' : ($c['score'] >= 12 ? 'Active today' : 'Active recently');
+            }
+        }
+        unset($c);
+
+        // Sort by contribution ratio descending
+        usort($components, fn($a, $b) => ($b['score'] / $b['max']) <=> ($a['score'] / $a['max']));
+
+        // Return top 3 with score > 0
+        $reasons = [];
+        foreach ($components as $c) {
+            if ($c['score'] > 0 && count($reasons) < 3) {
+                $reasons[] = $c['emoji'] . ' ' . $c['label'];
+            }
+        }
+
+        return $reasons;
     }
 
     /**
