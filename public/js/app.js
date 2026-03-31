@@ -276,6 +276,8 @@
         }
 
         function appendMessage(msg) {
+            // Dedup: skip if this message ID is already in the DOM
+            if (msg.id && messages.querySelector('[data-msg-id="' + msg.id + '"]')) return;
             const userId = document.getElementById('chatMessages')?.dataset.userId || '0';
             const isMine = String(msg.sender_id) === String(userId);
             const div = document.createElement('div');
@@ -284,6 +286,8 @@
             const text = msg.body || msg.message_text || '';
             div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(msg.created_at || msg.sent_at) + '</span>';
             messages.appendChild(div);
+            // Keep lastMsgId in sync so polling skips this message
+            if (msg.id && Number(msg.id) > Number(lastMsgId)) lastMsgId = msg.id;
         }
     }
 
@@ -301,6 +305,8 @@
         ajax('POST', '/chat/send', { match_id: matchId, body: body })
             .then(data => {
                 if (data.success && data.message) {
+                    // Dedup: skip if already appended by polling
+                    if (data.message.id && messages.querySelector('[data-msg-id="' + data.message.id + '"]')) return;
                     const div = document.createElement('div');
                     div.className = 'chat-bubble chat-bubble-mine';
                     div.dataset.msgId = data.message.id;

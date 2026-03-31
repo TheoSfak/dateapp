@@ -110,7 +110,7 @@
         ?>
             <div class="chat-date-sep"><?= htmlspecialchars($msgDate, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
-            <div class="chat-bubble <?= (int)$msg['sender_id'] === (int)$userId ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>">
+            <div class="chat-bubble <?= (int)$msg['sender_id'] === (int)$userId ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>" data-msg-id="<?= (int)$msg['id'] ?>">
                 <p><?= nl2br(htmlspecialchars($msg['message_text'], ENT_QUOTES, 'UTF-8')) ?></p>
                 <span class="chat-time">
                     <?= date('g:i A', strtotime($msg['sent_at'])) ?>
