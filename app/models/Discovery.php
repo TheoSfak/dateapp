@@ -161,12 +161,12 @@ class Discovery extends Model
                                                 OR (b.blocker_id = u.id AND b.blocked_id = ?)
                   )";
 
-        // Build params: first the score expression params, then distRaw, then WHERE params
-        $allParams = $params;
-        $allParams = array_merge($allParams, $distRawParams);
-        // Repeat score params for the component SELECT columns
-        // The params are already in $allParams from the score expressions above
-        // Now add the WHERE clause params
+        // Build params in SQL placeholder order:
+        //   1. distRaw (3 ?s if location)
+        //   2. individual score_* columns (14 ?s)
+        //   3. total_score re-expands all score expressions (14 ?s again)
+        //   4. WHERE clause params
+        $allParams = array_merge($distRawParams, $params, $params);
         $allParams[] = $userId; // shared interests subquery
         $allParams[] = $userId; // u.id != ?
         $allParams[] = $userId; // interactions
