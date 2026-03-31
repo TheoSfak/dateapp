@@ -53,6 +53,14 @@ a:hover { color: var(--primary-dark); text-decoration: none; }
 img { max-width: 100%; height: auto; display: block; }
 
 .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
+.container-landing { max-width: 100%; padding: 0; overflow: hidden; }
+
+/* Hide layout chrome on guest/landing page */
+.is-guest .site-header { display: none; }
+.is-guest .site-footer { display: none; }
+.is-guest .mobile-nav { display: none; }
+.is-guest .main-content { padding-top: 0; }
+.is-guest body { padding-bottom: 0; }
 
 .text-muted { color: var(--gray); }
 .text-center { text-align: center; }

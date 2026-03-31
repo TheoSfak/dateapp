@@ -37,8 +37,6 @@ class CSRF
             http_response_code(403);
             exit('Invalid CSRF token.');
         }
-        // Regenerate token after successful validation
-        Session::set('_csrf_token', bin2hex(random_bytes(32)));
         return true;
     }
 }

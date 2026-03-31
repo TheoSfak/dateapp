@@ -178,8 +178,12 @@
         const modal = document.getElementById('matchModal');
         if (!modal) return;
         if (data.match_name) {
-            const nameEl = modal.querySelector('.match-modal-name');
-            if (nameEl) nameEl.textContent = data.match_name;
+            const nameEl = document.getElementById('matchName');
+            if (nameEl) nameEl.textContent = 'You matched with ' + data.match_name + '!';
+        }
+        if (data.match_photo) {
+            const photoEl = document.getElementById('matchPhoto');
+            if (photoEl) { photoEl.src = BASE + '/public/' + data.match_photo; photoEl.style.display = 'block'; }
         }
         modal.classList.add('show');
     };
@@ -304,7 +308,7 @@
     // ═══════════════════════════════════════════════════════
     function initUploadZone() {
         const zone = document.querySelector('.upload-zone');
-        const input = document.getElementById('photoUploadInput');
+        const input = document.getElementById('photoInput');
         if (!zone || !input) return;
 
         zone.addEventListener('click', () => input.click());
@@ -325,7 +329,7 @@
     // GEOLOCATION DETECT
     // ═══════════════════════════════════════════════════════
     function initGeoDetect() {
-        const btn = document.querySelector('.detect-btn');
+        const btn = document.getElementById('detectLocationBtn');
         if (!btn) return;
         btn.addEventListener('click', () => {
             if (!navigator.geolocation) { alert('Geolocation not supported'); return; }

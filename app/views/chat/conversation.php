@@ -5,8 +5,8 @@
         </a>
         <div class="chat-user-info">
             <div class="chat-user-avatar">
-                <?php if (!empty($otherUser['photo'])): ?>
-                    <img src="/dateapp/public/<?= htmlspecialchars($otherUser['photo'], ENT_QUOTES, 'UTF-8') ?>" alt="">
+                <?php if (!empty($otherUser['primary_photo'])): ?>
+                    <img src="/dateapp/public/<?= htmlspecialchars($otherUser['primary_photo'], ENT_QUOTES, 'UTF-8') ?>" alt="">
                 <?php else: ?>
                     <div class="avatar-placeholder"><?= strtoupper(substr($otherUser['name'] ?? '?', 0, 1)) ?></div>
                 <?php endif; ?>

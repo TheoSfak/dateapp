@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/dateapp/public/css/style.css">
     <meta name="csrf-token" content="<?= htmlspecialchars(\App\Core\CSRF::token(), ENT_QUOTES, 'UTF-8') ?>">
 </head>
-<body>
+<body class="<?= \App\Core\Session::get('user_id') ? 'is-authed' : 'is-guest' ?>">
     <header class="site-header">
         <div class="container header-inner">
             <a href="/dateapp/" class="logo"><span class="logo-icon">💕</span> DateApp</a>
@@ -46,7 +46,7 @@
     </header>
 
     <main class="main-content">
-        <div class="container">
+        <div class="container <?= \App\Core\Session::get('user_id') ? '' : 'container-landing' ?>">
             <?php
             $success = \App\Core\Session::getFlash('success');
             $error   = \App\Core\Session::getFlash('error');
