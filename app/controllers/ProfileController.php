@@ -23,6 +23,18 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function photos(): void
+    {
+        $user = $this->requireAuth();
+        $photos = Photo::getByUserId($user['id']);
+        $maxPhotos = \App\Core\Config::get('app.max_photos_per_user', 6);
+
+        View::render('profile/photos', [
+            'photos'    => $photos,
+            'maxPhotos' => $maxPhotos,
+        ]);
+    }
+
     public function edit(): void
     {
         $user = $this->requireAuth();
@@ -150,7 +162,7 @@ class ProfileController extends Controller
 
         if (!isset($_FILES['photo'])) {
             \App\Core\Session::flash('error', 'No file uploaded.');
-            $this->redirect('/profile/edit');
+            $this->redirect('/profile/photos');
             return;
         }
 
@@ -162,7 +174,8 @@ class ProfileController extends Controller
         } else {
             \App\Core\Session::flash('error', 'Upload failed. Check file type and size (max 5MB, JPG/PNG/WebP).');
         }
-        $this->redirect('/profile/edit');
+        $redirect = ($_POST['from'] ?? '') === 'photos' ? '/profile/photos' : '/profile/edit';
+        $this->redirect($redirect);
     }
 
     public function setPrimaryPhoto(): void
@@ -171,8 +184,9 @@ class ProfileController extends Controller
         CSRF::validate();
         $photoId = (int)($_POST['photo_id'] ?? 0);
         Photo::setPrimary($photoId, $user['id']);
-        \App\Core\Session::flash('success', 'Primary photo updated.');
-        $this->redirect('/profile/edit');
+        \App\Core\Session::flash('success', 'Profile photo updated!');
+        $redirect = ($_POST['from'] ?? '') === 'photos' ? '/profile/photos' : '/profile/edit';
+        $this->redirect($redirect);
     }
 
     public function deletePhoto(): void
@@ -182,7 +196,8 @@ class ProfileController extends Controller
         $photoId = (int)($_POST['photo_id'] ?? 0);
         Photo::delete($photoId, $user['id']);
         \App\Core\Session::flash('success', 'Photo deleted.');
-        $this->redirect('/profile/edit');
+        $redirect = ($_POST['from'] ?? '') === 'photos' ? '/profile/photos' : '/profile/edit';
+        $this->redirect($redirect);
     }
 
     /**

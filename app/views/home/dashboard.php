@@ -67,6 +67,36 @@
         <svg class="dash-cta-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a>
 
+    <!-- ── My Photos Strip ───────────────────────────── -->
+    <div class="dash-section">
+        <div class="dash-section-header">
+            <h2>My Photos</h2>
+            <a href="/dateapp/profile/photos" class="dash-see-all">Manage</a>
+        </div>
+        <?php if (!empty($photos)): ?>
+        <div class="dash-photos-strip">
+            <?php foreach ($photos as $p): ?>
+            <a href="/dateapp/profile/photos" class="dash-photo-thumb <?= $p['is_primary'] ? 'dash-photo-thumb--primary' : '' ?>">
+                <img src="/dateapp/public/<?= htmlspecialchars($p['file_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Photo">
+                <?php if ($p['is_primary']): ?>
+                    <span class="dash-photo-star">★</span>
+                <?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+            <?php if (count($photos) < 6): ?>
+            <a href="/dateapp/profile/photos" class="dash-photo-add">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php else: ?>
+        <a href="/dateapp/profile/photos" class="dash-photos-empty">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Upload your first photo</span>
+        </a>
+        <?php endif; ?>
+    </div>
+
     <!-- ── Recent Matches ────────────────────────────── -->
     <?php if (!empty($recentMatches)): ?>
     <div class="dash-section">
@@ -128,11 +158,11 @@
             </div>
             <span>My Profile</span>
         </a>
-        <a href="/dateapp/profile/edit" class="dash-action-card">
+        <a href="/dateapp/profile/photos" class="dash-action-card">
             <div class="dash-action-icon dash-action-icon--purple">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
-            <span>Edit Profile</span>
+            <span>My Photos</span>
         </a>
         <a href="/dateapp/settings" class="dash-action-card">
             <div class="dash-action-icon dash-action-icon--gray">

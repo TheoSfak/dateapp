@@ -26,6 +26,7 @@ return [
 
     // Profile
     'GET /profile'           => [ProfileController::class, 'show'],
+    'GET /profile/photos'    => [ProfileController::class, 'photos'],
     'GET /profile/edit'      => [ProfileController::class, 'edit'],
     'POST /profile/update'   => [ProfileController::class, 'update'],
     'POST /profile/interests'     => [ProfileController::class, 'updateInterests'],

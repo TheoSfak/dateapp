@@ -32,8 +32,11 @@ class HomeController extends Controller
         $recentMatches = MatchModel::getByUserId($userId);
         $recentMatches = array_slice($recentMatches, 0, 10);
 
+        // Photos for gallery strip
+        $photos = Photo::getByUserId($userId);
+
         // Profile completeness
-        $photoCount = Photo::countByUserId($userId);
+        $photoCount = count($photos);
         $completeness = $this->calcCompleteness($profile, $photoCount);
 
         View::render('home/dashboard', [
@@ -45,6 +48,7 @@ class HomeController extends Controller
             'dailyLimit'     => $dailyLimit,
             'hasProfile'     => $hasProfile,
             'recentMatches'  => $recentMatches,
+            'photos'         => $photos,
             'photoCount'     => $photoCount,
             'completeness'   => $completeness,
         ]);
