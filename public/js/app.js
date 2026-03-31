@@ -74,6 +74,27 @@
         let startX = 0, startY = 0, currentX = 0, isDragging = false;
         const THRESHOLD = 100;
 
+        // Track remaining swipes from the counter element
+        function getRemaining() {
+            const el = document.querySelector('.swipe-counter');
+            if (!el) return Infinity; // no counter = premium/unlimited
+            const m = el.textContent.match(/(\d+)/);
+            return m ? parseInt(m[1], 10) : 0;
+        }
+
+        function showLimitReached() {
+            stack.innerHTML =
+                '<div class="empty-state">' +
+                '<div class="empty-icon">🔒</div>' +
+                '<h3>Daily swipe limit reached</h3>' +
+                '<p>Upgrade to Premium for unlimited swipes!</p>' +
+                '<a href="' + BASE + '/premium" class="btn btn-accent" style="margin-top:.75rem">Go Premium ⚡</a>' +
+                '</div>';
+            // Disable swipe buttons
+            document.querySelectorAll('.swipe-btn-like, .swipe-btn-nope, .swipe-btn-super, .swipe-btn-rewind')
+                .forEach(b => b.disabled = true);
+        }
+
         function getTopCard() { return stack.querySelector('.swipe-card:first-child'); }
 
         function bindCard(card) {
@@ -85,6 +106,7 @@
         }
 
         function onStart(e) {
+            if (getRemaining() <= 0) { showLimitReached(); return; }
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
@@ -118,6 +140,7 @@
                 card.style.opacity = '0';
                 setTimeout(() => {
                     card.remove();
+                    updateCounter(-1);
                     sendSwipe(card.dataset.userId, direction);
                     const next = getTopCard();
                     if (next) {
@@ -126,8 +149,9 @@
                         next.style.opacity = '1';
                     }
                     bindCard(getTopCard());
-                    updateCounter(-1);
                     if (!getTopCard()) showEmpty();
+                    // Check if that was the last free swipe
+                    if (getRemaining() <= 0) showLimitReached();
                 }, 350);
             } else {
                 card.style.transform = '';
@@ -148,22 +172,28 @@
         function triggerSwipe(direction) {
             const card = getTopCard();
             if (!card) return;
+            if (getRemaining() <= 0) { showLimitReached(); return; }
             const flyX = direction === 'pass' ? -1000 : 1000;
             card.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
             card.style.transform = `translateX(${flyX}px) rotate(${flyX * 0.04}deg)`;
             card.style.opacity = '0';
             setTimeout(() => {
                 card.remove();
+                updateCounter(-1);
                 sendSwipe(card.dataset.userId, direction);
                 bindCard(getTopCard());
-                updateCounter(-1);
                 if (!getTopCard()) showEmpty();
+                if (getRemaining() <= 0) showLimitReached();
             }, 350);
         }
 
         function sendSwipe(userId, type) {
             ajax('POST', '/swipe', { target_id: userId, type: type })
                 .then(data => {
+                    if (data.limit_reached) {
+                        showLimitReached();
+                        return;
+                    }
                     if (data.match) showMatchModal(data);
                 })
                 .catch(() => {});
@@ -174,7 +204,7 @@
             if (!el) return;
             const m = el.textContent.match(/(\d+)/);
             if (m) {
-                const n = Math.max(0, parseInt(m[1]) + delta);
+                const n = Math.max(0, parseInt(m[1], 10) + delta);
                 el.textContent = el.textContent.replace(/\d+/, n);
             }
         }
