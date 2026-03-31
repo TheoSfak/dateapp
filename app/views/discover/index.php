@@ -97,6 +97,18 @@
                     </div>
                     <?php endif; ?>
                 </div>
+
+                <!-- Spotlight Prompt Answers (overlay at bottom of card) -->
+                <?php if (!empty($person['spotlight_answers'])): ?>
+                <div class="swipe-card-prompts">
+                    <?php foreach ($person['spotlight_answers'] as $sa): ?>
+                    <div class="swipe-prompt-answer">
+                        <span class="swipe-prompt-q"><?= $sa['emoji'] ?> <?= htmlspecialchars($sa['prompt'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="swipe-prompt-a"><?= htmlspecialchars($sa['answer'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
                 <div class="swipe-stamp swipe-stamp-like">LIKE</div>
                 <div class="swipe-stamp swipe-stamp-nope">NOPE</div>
             </div>

@@ -40,6 +40,7 @@ class DiscoverController extends Controller
         $stack = array_map(function ($person) {
             $person['match_reasons'] = self::computeReasons($person);
             $person['compatibility'] = (int)round((float)($person['total_score'] ?? 0));
+            $person['spotlight_answers'] = \App\Models\SpotlightPrompt::getForDiscoverCard((int)$person['user_id'], 2);
             return $person;
         }, $stack);
 

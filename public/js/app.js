@@ -287,9 +287,32 @@
             const div = document.createElement('div');
             div.className = 'chat-bubble ' + (isMine ? 'chat-bubble-mine' : 'chat-bubble-theirs');
             div.dataset.msgId = msg.id;
-            const text = msg.body || msg.message_text || '';
-            div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(msg.created_at || msg.sent_at) + '</span>';
+
+            if (msg.message_type === 'voice' && msg.voice_path) {
+                const dur = parseInt(msg.voice_duration || 0, 10);
+                const mins = Math.floor(dur / 60);
+                const secs = String(dur % 60).padStart(2, '0');
+                let bars = '';
+                for (let b = 0; b < 20; b++) bars += '<span class="voice-bar" style="height:' + (20 + Math.random() * 80) + '%"></span>';
+                div.innerHTML = '<div class="voice-msg">' +
+                    '<button class="voice-play-btn" onclick="playVoice(this)" data-src="' + BASE + '/public/' + escapeHtml(msg.voice_path) + '">' +
+                    '<svg class="voice-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
+                    '<svg class="voice-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>' +
+                    '</button>' +
+                    '<div class="voice-waveform"><div class="voice-progress" style="width:0%"></div>' + bars + '</div>' +
+                    '<span class="voice-duration">' + mins + ':' + secs + '</span>' +
+                    '</div>' +
+                    '<span class="chat-time">' + formatTime(msg.created_at || msg.sent_at) + '</span>';
+            } else {
+                const text = msg.body || msg.message_text || '';
+                div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(msg.created_at || msg.sent_at) + '</span>';
+            }
             messages.appendChild(div);
+            // Hide icebreakers after first message is sent
+            const iceSection = document.getElementById('icebreakers');
+            if (iceSection) iceSection.remove();
+            const emptyMsg = messages.querySelector('.chat-empty');
+            if (emptyMsg) emptyMsg.remove();
             // Keep lastMsgId in sync so polling skips this message
             if (msg.id && Number(msg.id) > Number(lastMsgId)) lastMsgId = msg.id;
         }
@@ -1284,3 +1307,249 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     }
 
 })();
+
+/* ═══════════════════════════════════════════════════════════
+   🎙️  Voice Notes — Recording & Playback
+   ═══════════════════════════════════════════════════════════ */
+
+(function voiceNotes() {
+    const recordBtn = document.getElementById('voiceRecordBtn');
+    if (!recordBtn) return;
+
+    const recordingBar = document.getElementById('voiceRecordingBar');
+    const cancelBtn    = document.getElementById('voiceCancelBtn');
+    const sendBtn      = document.getElementById('voiceSendBtn');
+    const timerEl      = document.getElementById('voiceTimer');
+    const chatForm     = document.getElementById('chatForm');
+    const chatMessages = document.getElementById('chatMessages');
+    const matchId      = chatMessages?.dataset.matchId;
+    const BASE         = document.querySelector('meta[name="base-url"]')?.content || '/dateapp';
+
+    let mediaRecorder = null;
+    let audioChunks   = [];
+    let timerInterval  = null;
+    let seconds        = 0;
+
+    function csrfToken() {
+        return document.querySelector('input[name="csrf_token"]')?.value || '';
+    }
+
+    function updateTimer() {
+        seconds++;
+        const m = Math.floor(seconds / 60);
+        const s = String(seconds % 60).padStart(2, '0');
+        timerEl.textContent = m + ':' + s;
+    }
+
+    recordBtn.addEventListener('click', async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioChunks = [];
+            seconds = 0;
+            timerEl.textContent = '0:00';
+
+            mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMime() });
+
+            mediaRecorder.addEventListener('dataavailable', function(e) {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            });
+
+            mediaRecorder.addEventListener('stop', function() {
+                stream.getTracks().forEach(t => t.stop());
+            });
+
+            mediaRecorder.start();
+            timerInterval = setInterval(updateTimer, 1000);
+
+            chatForm.style.display = 'none';
+            recordingBar.style.display = 'flex';
+        } catch (err) {
+            alert('Microphone access is required. Please allow it and try again.');
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        stopRecording(false);
+    });
+
+    sendBtn.addEventListener('click', function() {
+        stopRecording(true);
+    });
+
+    function stopRecording(shouldSend) {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+        clearInterval(timerInterval);
+
+        if (shouldSend) {
+            mediaRecorder.addEventListener('stop', function onStop() {
+                mediaRecorder.removeEventListener('stop', onStop);
+                const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                if (blob.size > 0 && blob.size <= 2 * 1024 * 1024) {
+                    sendVoiceNote(blob, seconds);
+                }
+            });
+        }
+
+        mediaRecorder.stop();
+        recordingBar.style.display = 'none';
+        chatForm.style.display = '';
+    }
+
+    function sendVoiceNote(blob, duration) {
+        const fd = new FormData();
+        const ext = blob.type.includes('webm') ? 'webm' : (blob.type.includes('ogg') ? 'ogg' : 'mp4');
+        fd.append('voice', blob, 'voice.' + ext);
+        fd.append('match_id', matchId);
+        fd.append('duration', duration);
+        fd.append('csrf_token', csrfToken());
+
+        fetch(BASE + '/chat/send-voice', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.message) {
+                // appendMessage already handles voice type; trigger it through DOM
+                const evt = new CustomEvent('voice-sent', { detail: data.message });
+                chatMessages.dispatchEvent(evt);
+            }
+        })
+        .catch(() => {});
+    }
+
+    // Listen for voice-sent event so initChat's appendMessage can handle it
+    chatMessages.addEventListener('voice-sent', function(e) {
+        // The initChat closure will handle this through polling if needed,
+        // but for instant display, we build the bubble directly
+        const msg = e.detail;
+        if (chatMessages.querySelector('[data-msg-id="' + msg.id + '"]')) return;
+        const userId = chatMessages.dataset.userId || '0';
+        const isMine = String(msg.sender_id) === String(userId);
+        const div = document.createElement('div');
+        div.className = 'chat-bubble ' + (isMine ? 'chat-bubble-mine' : 'chat-bubble-theirs');
+        div.dataset.msgId = msg.id;
+        const dur = parseInt(msg.voice_duration || 0, 10);
+        const mins = Math.floor(dur / 60);
+        const secs = String(dur % 60).padStart(2, '0');
+        let bars = '';
+        for (let b = 0; b < 20; b++) bars += '<span class="voice-bar" style="height:' + (20 + Math.random() * 80) + '%"></span>';
+        div.innerHTML = '<div class="voice-msg">' +
+            '<button class="voice-play-btn" onclick="playVoice(this)" data-src="' + BASE + '/public/' + msg.voice_path + '">' +
+            '<svg class="voice-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>' +
+            '<svg class="voice-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>' +
+            '</button>' +
+            '<div class="voice-waveform"><div class="voice-progress" style="width:0%"></div>' + bars + '</div>' +
+            '<span class="voice-duration">' + mins + ':' + secs + '</span>' +
+            '</div>' +
+            '<span class="chat-time">Just now</span>';
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // Hide icebreakers
+        const ice = document.getElementById('icebreakers');
+        if (ice) ice.remove();
+        const empty = chatMessages.querySelector('.chat-empty');
+        if (empty) empty.remove();
+    });
+
+    function getSupportedMime() {
+        const types = ['audio/webm', 'audio/ogg', 'audio/mp4', 'video/webm'];
+        for (const t of types) {
+            if (MediaRecorder.isTypeSupported(t)) return t;
+        }
+        return '';
+    }
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   🎙️  Voice Playback
+   ═══════════════════════════════════════════════════════════ */
+
+(function() {
+    let currentAudio = null;
+    let currentBtn   = null;
+
+    window.playVoice = function(btn) {
+        const src = btn.dataset.src;
+        if (!src) return;
+
+        const playIcon  = btn.querySelector('.voice-icon-play');
+        const pauseIcon = btn.querySelector('.voice-icon-pause');
+        const waveform  = btn.closest('.voice-msg').querySelector('.voice-waveform');
+        const bars      = waveform.querySelectorAll('.voice-bar');
+        const durLabel  = btn.closest('.voice-msg').querySelector('.voice-duration');
+
+        // If clicking the currently playing button, toggle pause
+        if (currentBtn === btn && currentAudio && !currentAudio.paused) {
+            currentAudio.pause();
+            playIcon.style.display = '';
+            pauseIcon.style.display = 'none';
+            return;
+        }
+
+        // Stop any other playing audio
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            if (currentBtn) {
+                currentBtn.querySelector('.voice-icon-play').style.display = '';
+                currentBtn.querySelector('.voice-icon-pause').style.display = 'none';
+                resetBars(currentBtn);
+            }
+        }
+
+        const audio = new Audio(src);
+        currentAudio = audio;
+        currentBtn = btn;
+
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = '';
+
+        audio.addEventListener('timeupdate', function() {
+            if (!audio.duration) return;
+            const pct = audio.currentTime / audio.duration;
+            const playedCount = Math.floor(pct * bars.length);
+            bars.forEach((bar, i) => {
+                bar.classList.toggle('played', i < playedCount);
+            });
+            const rem = Math.ceil(audio.duration - audio.currentTime);
+            const m = Math.floor(rem / 60);
+            const s = String(rem % 60).padStart(2, '0');
+            durLabel.textContent = m + ':' + s;
+        });
+
+        audio.addEventListener('ended', function() {
+            playIcon.style.display = '';
+            pauseIcon.style.display = 'none';
+            bars.forEach(b => b.classList.remove('played'));
+            currentAudio = null;
+            currentBtn = null;
+        });
+
+        audio.play().catch(() => {});
+    };
+
+    function resetBars(btn) {
+        const bars = btn.closest('.voice-msg')?.querySelectorAll('.voice-bar');
+        if (bars) bars.forEach(b => b.classList.remove('played'));
+    }
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   🧊  Icebreaker Interaction
+   ═══════════════════════════════════════════════════════════ */
+
+window.useIcebreaker = function(btn) {
+    const input = document.getElementById('chatInput');
+    if (!input) return;
+    // Get text without emoji
+    const spans = btn.querySelectorAll('span');
+    const text = spans.length > 1 ? spans[1].textContent : btn.textContent;
+    input.value = text.trim();
+    input.focus();
+    // Animate selected pill
+    btn.style.background = 'var(--primary)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--primary)';
+};

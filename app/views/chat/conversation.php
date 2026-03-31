@@ -96,7 +96,22 @@
     <?php endif; ?>
 
     <div class="chat-messages" id="chatMessages" data-match-id="<?= (int)$match['id'] ?>" data-user-id="<?= (int)$userId ?>">
-        <?php if (empty($messages)): ?>
+        <?php if (empty($messages) && !empty($icebreakers)): ?>
+            <div class="chat-empty">
+                <p>You matched! Start the conversation 🎉</p>
+            </div>
+            <div class="chat-icebreakers" id="icebreakers">
+                <p class="icebreaker-header">🧊 Try an icebreaker:</p>
+                <div class="icebreaker-pills">
+                    <?php foreach ($icebreakers as $ib): ?>
+                    <button class="icebreaker-pill" onclick="useIcebreaker(this)">
+                        <span class="icebreaker-emoji"><?= $ib['emoji'] ?></span>
+                        <span><?= htmlspecialchars($ib['text'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php elseif (empty($messages)): ?>
             <div class="chat-empty">
                 <p>You matched! Start the conversation 🎉</p>
             </div>
@@ -111,7 +126,23 @@
             <div class="chat-date-sep"><?= htmlspecialchars($msgDate, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
             <div class="chat-bubble <?= (int)$msg['sender_id'] === (int)$userId ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>" data-msg-id="<?= (int)$msg['id'] ?>">
+                <?php if (($msg['message_type'] ?? 'text') === 'voice'): ?>
+                <div class="voice-msg">
+                    <button class="voice-play-btn" onclick="playVoice(this)" data-src="/dateapp/public/<?= htmlspecialchars($msg['voice_path'], ENT_QUOTES, 'UTF-8') ?>">
+                        <svg class="voice-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <svg class="voice-icon-pause" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    </button>
+                    <div class="voice-waveform">
+                        <div class="voice-progress" style="width:0%"></div>
+                        <?php for ($b = 0; $b < 20; $b++): ?>
+                            <span class="voice-bar" style="height:<?= rand(20, 100) ?>%"></span>
+                        <?php endfor; ?>
+                    </div>
+                    <span class="voice-duration"><?= gmdate('i:s', (int)($msg['voice_duration'] ?? 0)) ?></span>
+                </div>
+                <?php else: ?>
                 <p><?= nl2br(htmlspecialchars($msg['message_text'], ENT_QUOTES, 'UTF-8')) ?></p>
+                <?php endif; ?>
                 <span class="chat-time">
                     <?= date('g:i A', strtotime($msg['sent_at'])) ?>
                     <?php if ((int)$msg['sender_id'] === (int)$userId): ?>
@@ -130,11 +161,29 @@
 
     <form class="chat-input-bar" id="chatForm" onsubmit="return sendMessage(event)">
         <input type="hidden" name="csrf_token" value="<?= \App\Core\CSRF::token() ?>">
+        <!-- Voice Record Button -->
+        <button type="button" class="chat-voice-btn" id="voiceRecordBtn" title="Send a voice note">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
         <input type="text" name="body" id="chatInput" placeholder="Type a message..." autocomplete="off" maxlength="2000" required>
         <button type="submit" class="chat-send-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </form>
+
+    <!-- Voice Recording Overlay -->
+    <div class="voice-recording-bar" id="voiceRecordingBar" style="display:none">
+        <button class="voice-cancel-btn" id="voiceCancelBtn" title="Cancel">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="voice-recording-indicator">
+            <span class="voice-rec-dot"></span>
+            <span class="voice-rec-timer" id="voiceTimer">0:00</span>
+        </div>
+        <button class="voice-send-record-btn" id="voiceSendBtn" title="Send voice note">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+    </div>
 
     <!-- Polite Pass Modal -->
     <div class="polite-pass-modal" id="politePassModal" style="display:none">

@@ -12,6 +12,7 @@ use App\Controllers\ChatController;
 use App\Controllers\SettingsController;
 use App\Controllers\AdminController;
 use App\Controllers\GameController;
+use App\Controllers\SpotlightController;
 use App\Controllers\VerificationController;
 
 return [
@@ -74,6 +75,18 @@ return [
 
     // Anti-Ghosting
     'POST /chat/polite-pass'  => [ChatController::class, 'politePass'],
+
+    // Voice Notes
+    'POST /chat/send-voice'   => [ChatController::class, 'sendVoice'],
+
+    // Smart Icebreakers
+    'GET /chat/icebreakers'   => [ChatController::class, 'icebreakers'],
+
+    // Spotlight Prompts
+    'GET /spotlight'              => [SpotlightController::class, 'index'],
+    'POST /spotlight/answer'      => [SpotlightController::class, 'answer'],
+    'POST /spotlight/delete'      => [SpotlightController::class, 'deleteAnswer'],
+    'GET /spotlight/more'         => [SpotlightController::class, 'more'],
 
     // Admin
     'GET /admin'               => [AdminController::class, 'dashboard'],

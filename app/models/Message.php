@@ -26,13 +26,26 @@ class Message extends Model
     }
 
     /**
-     * Send a message.
+     * Send a text message.
      */
     public static function send(int $matchId, int $senderId, string $text): int
     {
         static::db()->query(
-            "INSERT INTO messages (match_id, sender_id, message_text) VALUES (?, ?, ?)",
+            "INSERT INTO messages (match_id, sender_id, message_text, message_type) VALUES (?, ?, ?, 'text')",
             [$matchId, $senderId, $text]
+        );
+        return (int) static::db()->lastInsertId();
+    }
+
+    /**
+     * Send a voice message.
+     */
+    public static function sendVoice(int $matchId, int $senderId, string $voicePath, int $duration): int
+    {
+        static::db()->query(
+            "INSERT INTO messages (match_id, sender_id, message_text, message_type, voice_path, voice_duration)
+             VALUES (?, ?, '', 'voice', ?, ?)",
+            [$matchId, $senderId, $voicePath, $duration]
         );
         return (int) static::db()->lastInsertId();
     }
