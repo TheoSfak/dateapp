@@ -10,7 +10,9 @@
             <?php endif; ?>
         </div>
         <div class="profile-header-info">
-            <h1><?= htmlspecialchars($profile['name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?><?php if ($age): ?>, <span class="profile-age"><?= $age ?></span><?php endif; ?></h1>
+            <h1><?= htmlspecialchars($profile['name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?><?php if ($age): ?>, <span class="profile-age"><?= $age ?></span><?php endif; ?>
+                <?php if (!empty($profile['is_verified'])): ?><span class="verified-badge" title="Verified">✓</span><?php endif; ?>
+            </h1>
             <?php if (!empty($profile['city'])): ?>
                 <p class="profile-location">📍 <?= htmlspecialchars($profile['city'], ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>

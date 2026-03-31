@@ -12,6 +12,7 @@ use App\Controllers\ChatController;
 use App\Controllers\SettingsController;
 use App\Controllers\AdminController;
 use App\Controllers\GameController;
+use App\Controllers\VerificationController;
 
 return [
     // Public pages
@@ -55,6 +56,10 @@ return [
     'POST /game/answer'   => [GameController::class, 'answer'],
     'GET /game/poll'      => [GameController::class, 'poll'],
 
+    // Identity Verification
+    'GET /verify-identity'       => [VerificationController::class, 'index'],
+    'POST /verify-identity/submit' => [VerificationController::class, 'submit'],
+
     // Settings & Safety
     'GET /settings'         => [SettingsController::class, 'index'],
     'POST /block'           => [SettingsController::class, 'blockUser'],
@@ -63,6 +68,10 @@ return [
     'GET /liked-me'         => [SettingsController::class, 'likedMe'],
     'POST /settings/password' => [SettingsController::class, 'changePassword'],
     'POST /settings/delete'   => [SettingsController::class, 'deleteAccount'],
+    'POST /settings/availability' => [SettingsController::class, 'saveAvailability'],
+
+    // Anti-Ghosting
+    'POST /chat/polite-pass'  => [ChatController::class, 'politePass'],
 
     // Admin
     'GET /admin'               => [AdminController::class, 'dashboard'],
@@ -70,4 +79,6 @@ return [
     'POST /admin/users/status' => [AdminController::class, 'updateUserStatus'],
     'GET /admin/reports'       => [AdminController::class, 'reports'],
     'POST /admin/reports/handle' => [AdminController::class, 'handleReport'],
+    'GET /admin/verifications'    => [AdminController::class, 'verifications'],
+    'POST /admin/verify/handle'   => [AdminController::class, 'handleVerification'],
 ];

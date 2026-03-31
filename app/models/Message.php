@@ -79,4 +79,68 @@ class Message extends Model
         );
         return $stmt->fetchAll();
     }
+
+    /**
+     * Get the last message in a match by a specific sender.
+     */
+    public static function getLastBySender(int $matchId, int $senderId): ?array
+    {
+        $stmt = static::db()->query(
+            "SELECT * FROM messages WHERE match_id = ? AND sender_id = ? ORDER BY sent_at DESC LIMIT 1",
+            [$matchId, $senderId]
+        );
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /**
+     * Get the very last message in a match (any sender).
+     */
+    public static function getLastInMatch(int $matchId): ?array
+    {
+        $stmt = static::db()->query(
+            "SELECT * FROM messages WHERE match_id = ? ORDER BY sent_at DESC LIMIT 1",
+            [$matchId]
+        );
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /**
+     * Check ghost status: returns hours since the other user last sent a message.
+     * Null if no messages exist yet.
+     */
+    public static function getGhostInfo(int $matchId, int $currentUserId): ?array
+    {
+        // Last message from *other* person to us
+        $stmt = static::db()->query(
+            "SELECT * FROM messages WHERE match_id = ? AND sender_id != ? ORDER BY sent_at DESC LIMIT 1",
+            [$matchId, $currentUserId]
+        );
+        $lastFromThem = $stmt->fetch();
+
+        // Last message from us
+        $stmt2 = static::db()->query(
+            "SELECT * FROM messages WHERE match_id = ? AND sender_id = ? ORDER BY sent_at DESC LIMIT 1",
+            [$matchId, $currentUserId]
+        );
+        $lastFromUs = $stmt2->fetch();
+
+        if (!$lastFromThem && !$lastFromUs) return null;
+
+        // If the last message overall is from them and we haven't replied in 72h
+        $lastOverall = static::getLastInMatch($matchId);
+        if (!$lastOverall) return null;
+
+        $hoursSinceLastMsg = (time() - strtotime($lastOverall['sent_at'])) / 3600;
+        $isOurTurn = $lastOverall['sender_id'] !== $currentUserId;
+
+        return [
+            'hours_since_last' => round($hoursSinceLastMsg, 1),
+            'is_our_turn' => $isOurTurn,
+            'last_sender_id' => (int)$lastOverall['sender_id'],
+            'needs_nudge' => $isOurTurn && $hoursSinceLastMsg >= 72,
+            'partner_waiting' => !$isOurTurn && $hoursSinceLastMsg >= 72,
+        ];
+    }
 }

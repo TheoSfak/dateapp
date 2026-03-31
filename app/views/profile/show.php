@@ -10,12 +10,17 @@
             <?php endif; ?>
         </div>
         <div class="profile-header-info">
-            <h1><?= htmlspecialchars($profile['name'] ?? 'No Name', ENT_QUOTES, 'UTF-8') ?><?php if ($age): ?>, <span class="profile-age"><?= $age ?></span><?php endif; ?></h1>
+            <h1><?= htmlspecialchars($profile['name'] ?? 'No Name', ENT_QUOTES, 'UTF-8') ?><?php if ($age): ?>, <span class="profile-age"><?= $age ?></span><?php endif; ?>
+                <?php if (!empty($profile['is_verified'])): ?><span class="verified-badge" title="Verified">✓</span><?php endif; ?>
+            </h1>
             <?php if (!empty($profile['city'])): ?>
                 <p class="profile-location">📍 <?= htmlspecialchars($profile['city'], ENT_QUOTES, 'UTF-8') ?><?= !empty($profile['country']) ? ', ' . htmlspecialchars($profile['country'], ENT_QUOTES, 'UTF-8') : '' ?></p>
             <?php endif; ?>
             <div class="profile-actions">
                 <a href="/dateapp/profile/edit" class="btn btn-primary">Edit Profile</a>
+                <?php if (empty($profile['is_verified'])): ?>
+                    <a href="/dateapp/verify-identity" class="btn btn-outline">🛡️ Get Verified</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

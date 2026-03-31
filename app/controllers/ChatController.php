@@ -7,6 +7,8 @@ use App\Core\Session;
 use App\Models\MatchModel;
 use App\Models\Message;
 use App\Models\Profile;
+use App\Models\Availability;
+use App\Models\DateIdea;
 
 class ChatController extends Controller
 {
@@ -47,11 +49,23 @@ class ChatController extends Controller
         // Mark messages as read
         Message::markRead($matchId, $user['id']);
 
+        // Anti-ghosting info
+        $ghostInfo = Message::getGhostInfo($matchId, $user['id']);
+
+        // Availability overlap
+        $availOverlap = Availability::getOverlap($user['id'], $otherId);
+
+        // Date ideas
+        $dateIdeas = DateIdea::generate($user['id'], $otherId);
+
         View::render('chat/conversation', [
-            'match'     => $match,
-            'otherUser' => $otherProfile,
-            'messages'  => $messages,
-            'userId'    => $user['id'],
+            'match'         => $match,
+            'otherUser'     => $otherProfile,
+            'messages'      => $messages,
+            'userId'        => $user['id'],
+            'ghostInfo'     => $ghostInfo,
+            'availOverlap'  => $availOverlap,
+            'dateIdeas'     => $dateIdeas,
         ]);
     }
 
@@ -149,5 +163,44 @@ class ChatController extends Controller
 
         MatchModel::unmatch($matchId, $user['id']);
         echo json_encode(['success' => true]);
+    }
+
+    /**
+     * Send a polite pass (kind closure message, then unmatch).
+     */
+    public function politePass(): void
+    {
+        $user = $this->requireAuth();
+        header('Content-Type: application/json');
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $stored = Session::get('_csrf_token', '');
+        if (!hash_equals($stored, $token)) {
+            echo json_encode(['error' => 'Invalid CSRF token']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
+
+        $matchId = (int)($input['match_id'] ?? 0);
+        $msgIndex = (int)($input['message_index'] ?? 0);
+
+        $match = MatchModel::findById($matchId);
+        if (!$match || ($match['user_1_id'] !== $user['id'] && $match['user_2_id'] !== $user['id'])) {
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $politeMessages = [
+            "I've really enjoyed chatting with you, but I don't feel a romantic connection. Wishing you all the best! 💛",
+            "Thanks for the great conversations! I think we're better as friends though. Best of luck out there! 🌟",
+            "I appreciate getting to know you, but I don't think we're the right match. I hope you find someone amazing! ✨",
+        ];
+
+        $msg = $politeMessages[min($msgIndex, count($politeMessages) - 1)];
+        Message::send($matchId, $user['id'], $msg);
+
+        echo json_encode(['success' => true, 'message' => $msg]);
     }
 }

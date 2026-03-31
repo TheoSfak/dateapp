@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `email_verified_at`   DATETIME     NULL DEFAULT NULL,
     `verification_token`  VARCHAR(64)  NULL DEFAULT NULL,
     `is_premium`          TINYINT(1)   NOT NULL DEFAULT 0,
+    `is_verified`         TINYINT(1)   NOT NULL DEFAULT 0,
     `role`                ENUM('user','admin') NOT NULL DEFAULT 'user',
     `status`              ENUM('active','suspended','banned') NOT NULL DEFAULT 'active',
     `last_login_at`       DATETIME     NULL DEFAULT NULL,
@@ -195,6 +196,37 @@ CREATE TABLE IF NOT EXISTS `user_dealbreakers` (
     `value`   VARCHAR(100) NOT NULL,
     CONSTRAINT `fk_db_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     UNIQUE KEY `uq_dealbreaker` (`user_id`, `field`)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- VERIFICATION_REQUESTS – photo identity verification
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `verification_requests` (
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`     INT UNSIGNED NOT NULL,
+    `gesture`     VARCHAR(50)  NOT NULL,
+    `photo_path`  VARCHAR(500) NOT NULL,
+    `status`      ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    `reviewed_by` INT UNSIGNED NULL DEFAULT NULL,
+    `reviewed_at` DATETIME     NULL DEFAULT NULL,
+    `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_vr_user`     FOREIGN KEY (`user_id`)     REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_vr_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    INDEX `idx_vr_status` (`status`)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- AVAILABILITY_SLOTS – recurring free-time blocks for dates
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `availability_slots` (
+    `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`      INT UNSIGNED    NOT NULL,
+    `day_of_week`  TINYINT UNSIGNED NOT NULL COMMENT '0=Mon … 6=Sun',
+    `start_time`   TIME NOT NULL,
+    `end_time`     TIME NOT NULL,
+    `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_as_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_as_user` (`user_id`)
 ) ENGINE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;

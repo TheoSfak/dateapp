@@ -42,6 +42,68 @@
         </div>
     </div>
 
+    <!-- Availability Calendar Section -->
+    <div class="settings-section">
+        <h3>📅 Availability Calendar</h3>
+        <p class="text-muted" style="margin-bottom:0.75rem;">Set your typical free times so we can find matches with overlapping schedules.</p>
+        <div class="settings-card">
+            <div class="avail-calendar" id="availCalendar">
+                <?php
+                    $dayNames = \App\Models\Availability::getDayNames();
+                    $grouped = [];
+                    foreach ($availSlots ?? [] as $s) {
+                        $grouped[(int)$s['day_of_week']][] = $s;
+                    }
+                ?>
+                <?php foreach ($dayNames as $dayIdx => $dayName): ?>
+                <div class="avail-day-row" data-day="<?= $dayIdx ?>">
+                    <span class="avail-day-label"><?= substr($dayName, 0, 3) ?></span>
+                    <div class="avail-day-slots">
+                        <?php if (!empty($grouped[$dayIdx])): ?>
+                            <?php foreach ($grouped[$dayIdx] as $slot): ?>
+                            <span class="avail-slot-tag">
+                                <?= date('g:iA', strtotime($slot['start_time'])) ?>–<?= date('g:iA', strtotime($slot['end_time'])) ?>
+                                <button class="avail-slot-remove" data-day="<?= $dayIdx ?>" data-start="<?= htmlspecialchars($slot['start_time'], ENT_QUOTES, 'UTF-8') ?>" data-end="<?= htmlspecialchars($slot['end_time'], ENT_QUOTES, 'UTF-8') ?>">&times;</button>
+                            </span>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <span class="avail-empty">No times set</span>
+                        <?php endif; ?>
+                    </div>
+                    <button class="avail-add-btn" data-day="<?= $dayIdx ?>">+ Add</button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Add Slot Mini Form (appears inline) -->
+            <div class="avail-add-form" id="availAddForm" style="display:none">
+                <div class="avail-add-form-inner">
+                    <span id="availAddDay" class="avail-add-day-label"></span>
+                    <input type="hidden" id="availAddDayVal">
+                    <select id="availStartTime" class="form-input form-input-sm">
+                        <?php for ($h = 6; $h <= 22; $h++): ?>
+                        <option value="<?= sprintf('%02d:00', $h) ?>"><?= date('g:i A', strtotime("$h:00")) ?></option>
+                        <option value="<?= sprintf('%02d:30', $h) ?>"><?= date('g:i A', strtotime("$h:30")) ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <span>to</span>
+                    <select id="availEndTime" class="form-input form-input-sm">
+                        <?php for ($h = 7; $h <= 23; $h++): ?>
+                        <option value="<?= sprintf('%02d:00', $h) ?>"><?= date('g:i A', strtotime("$h:00")) ?></option>
+                        <?php if ($h < 23): ?>
+                        <option value="<?= sprintf('%02d:30', $h) ?>"><?= date('g:i A', strtotime("$h:30")) ?></option>
+                        <?php endif; ?>
+                        <?php endfor; ?>
+                    </select>
+                    <button class="btn btn-sm btn-primary" id="availAddConfirm">Add</button>
+                    <button class="btn btn-sm btn-outline" id="availAddCancel">Cancel</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="availSaveBtn" style="margin-top:0.75rem">Save Availability</button>
+        </div>
+    </div>
+
     <div class="settings-section">
         <h3>Blocked Users</h3>
         <div class="settings-card">

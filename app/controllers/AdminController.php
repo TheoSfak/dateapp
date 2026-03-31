@@ -10,6 +10,7 @@ use App\Models\Profile;
 use App\Models\Report;
 use App\Models\Block;
 use App\Models\Interaction;
+use App\Models\Verification;
 
 class AdminController extends Controller
 {
@@ -130,5 +131,39 @@ class AdminController extends Controller
             }
         }
         $this->redirect('/admin/reports');
+    }
+
+    /**
+     * Show pending verification requests.
+     */
+    public function verifications(): void
+    {
+        $this->requireAdmin();
+        $pending = Verification::getPending();
+
+        View::render('admin/verifications', ['requests' => $pending]);
+    }
+
+    /**
+     * Approve or reject a verification request.
+     */
+    public function handleVerification(): void
+    {
+        $admin = $this->requireAdmin();
+        CSRF::validate();
+
+        $requestId = (int)($_POST['request_id'] ?? 0);
+        $action = $_POST['action'] ?? '';
+
+        if ($requestId > 0) {
+            if ($action === 'approve') {
+                Verification::approve($requestId, $admin['id']);
+                Session::flash('success', 'Verification approved. User badge enabled.');
+            } elseif ($action === 'reject') {
+                Verification::reject($requestId, $admin['id']);
+                Session::flash('success', 'Verification rejected.');
+            }
+        }
+        $this->redirect('/admin/verifications');
     }
 }

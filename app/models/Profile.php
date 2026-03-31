@@ -38,7 +38,7 @@ class Profile extends Model
      */
     public static function getFullProfile(int $userId): ?array
     {
-        $sql = "SELECT u.id, u.email, u.is_premium, u.email_verified_at, u.created_at as member_since,
+        $sql = "SELECT u.id, u.email, u.is_premium, u.is_verified, u.email_verified_at, u.created_at as member_since,
                        p.name, p.bio, p.date_of_birth, p.gender, p.looking_for,
                        p.relationship_goal, p.height_cm, p.smoking, p.drinking,
                        p.city, p.country, p.latitude, p.longitude,

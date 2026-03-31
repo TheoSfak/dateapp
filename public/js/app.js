@@ -53,6 +53,12 @@
         if (filterBtn && filterPanel) {
             filterBtn.addEventListener('click', () => filterPanel.classList.toggle('show'));
         }
+        // ─── Anti-Ghosting / Polite Pass ───────────────
+        initPolitePass();
+        // ─── Date Ideas Panel ──────────────────────────
+        initDateIdeas();
+        // ─── Availability Calendar ─────────────────────
+        initAvailability();
     });
 
     // ═══════════════════════════════════════════════════════
@@ -728,4 +734,189 @@
         h = h % 12 || 12;
         return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
     }
+
+    // ═══════════════════════════════════════════════════════
+    // ANTI-GHOSTING / POLITE PASS
+    // ═══════════════════════════════════════════════════════
+    function initPolitePass() {
+        const dismissBtn = document.getElementById('ghostDismiss');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                dismissBtn.closest('.chat-ghost-nudge').remove();
+            });
+        }
+
+        const passBtn = document.getElementById('politePassBtn');
+        const modal = document.getElementById('politePassModal');
+        const overlay = document.getElementById('politePassOverlay');
+        const cancel = document.getElementById('politePassCancel');
+        if (!passBtn || !modal) return;
+
+        passBtn.addEventListener('click', () => { modal.style.display = 'flex'; });
+        if (overlay) overlay.addEventListener('click', () => { modal.style.display = 'none'; });
+        if (cancel)  cancel.addEventListener('click',  () => { modal.style.display = 'none'; });
+
+        document.querySelectorAll('.polite-pass-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = btn.dataset.index;
+                const matchId = passBtn.dataset.matchId;
+                const csrf = document.querySelector('[name="csrf_token"]')?.value;
+                const fd = new FormData();
+                fd.append('csrf_token', csrf);
+                fd.append('match_id', matchId);
+                fd.append('message_index', idx);
+                fetch('/dateapp/chat/polite-pass', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok) {
+                            modal.style.display = 'none';
+                            const nudge = document.getElementById('ghostNudge');
+                            if (nudge) nudge.remove();
+                            // Append the sent message to the chat
+                            const container = document.getElementById('chatMessages');
+                            if (container && data.text) {
+                                const div = document.createElement('div');
+                                div.className = 'chat-bubble chat-bubble-mine';
+                                div.innerHTML = '<p>' + escapeHtml(data.text) + '</p>';
+                                container.appendChild(div);
+                                container.scrollTop = container.scrollHeight;
+                            }
+                        }
+                    });
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // DATE IDEAS PANEL
+    // ═══════════════════════════════════════════════════════
+    function initDateIdeas() {
+        const toggle = document.getElementById('dateIdeasToggle');
+        const panel = document.getElementById('dateIdeasPanel');
+        const close = document.getElementById('dateIdeasClose');
+        if (!toggle || !panel) return;
+
+        toggle.addEventListener('click', () => {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        });
+        if (close) close.addEventListener('click', () => { panel.style.display = 'none'; });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // AVAILABILITY CALENDAR (Settings)
+    // ═══════════════════════════════════════════════════════
+    function initAvailability() {
+        const calendar = document.getElementById('availCalendar');
+        const addForm = document.getElementById('availAddForm');
+        const saveBtn = document.getElementById('availSaveBtn');
+        if (!calendar) return;
+
+        const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        let activeDay = null;
+
+        // Show add-slot form for a specific day
+        calendar.querySelectorAll('.avail-add-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                activeDay = parseInt(btn.dataset.day);
+                const label = document.getElementById('availAddDay');
+                const dayVal = document.getElementById('availAddDayVal');
+                if (label) label.textContent = dayNames[activeDay] || '';
+                if (dayVal) dayVal.value = activeDay;
+                if (addForm) addForm.style.display = 'block';
+            });
+        });
+
+        // Cancel add
+        const cancelBtn = document.getElementById('availAddCancel');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => {
+            if (addForm) addForm.style.display = 'none';
+            activeDay = null;
+        });
+
+        // Confirm add — inserts a tag into the day row
+        const confirmBtn = document.getElementById('availAddConfirm');
+        if (confirmBtn) confirmBtn.addEventListener('click', () => {
+            if (activeDay === null) return;
+            const startSel = document.getElementById('availStartTime');
+            const endSel = document.getElementById('availEndTime');
+            if (!startSel || !endSel) return;
+            const start = startSel.value;
+            const end = endSel.value;
+            if (start >= end) { alert('Start time must be before end time.'); return; }
+
+            const row = calendar.querySelector('.avail-day-row[data-day="' + activeDay + '"]');
+            if (!row) return;
+            const slotsContainer = row.querySelector('.avail-day-slots');
+
+            // Remove "No times set" placeholder
+            const empty = slotsContainer.querySelector('.avail-empty');
+            if (empty) empty.remove();
+
+            const formatTime = (t) => {
+                const [hh, mm] = t.split(':');
+                let h = parseInt(hh), suffix = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                return h + ':' + mm + suffix;
+            };
+
+            const tag = document.createElement('span');
+            tag.className = 'avail-slot-tag';
+            tag.innerHTML = formatTime(start) + '–' + formatTime(end) +
+                ' <button class="avail-slot-remove" data-day="' + activeDay + '" data-start="' + start + ':00" data-end="' + end + ':00">&times;</button>';
+            slotsContainer.appendChild(tag);
+
+            if (addForm) addForm.style.display = 'none';
+            activeDay = null;
+        });
+
+        // Remove slot tag
+        calendar.addEventListener('click', (e) => {
+            if (e.target.classList.contains('avail-slot-remove')) {
+                const tag = e.target.closest('.avail-slot-tag');
+                const row = e.target.closest('.avail-day-row');
+                if (tag) tag.remove();
+                // If no more tags, show placeholder
+                if (row) {
+                    const slots = row.querySelector('.avail-day-slots');
+                    if (slots && !slots.querySelector('.avail-slot-tag')) {
+                        const empty = document.createElement('span');
+                        empty.className = 'avail-empty';
+                        empty.textContent = 'No times set';
+                        slots.appendChild(empty);
+                    }
+                }
+            }
+        });
+
+        // Save all slots via AJAX
+        if (saveBtn) saveBtn.addEventListener('click', () => {
+            const slots = [];
+            calendar.querySelectorAll('.avail-day-row').forEach(row => {
+                const day = parseInt(row.dataset.day);
+                row.querySelectorAll('.avail-slot-remove').forEach(rm => {
+                    slots.push({
+                        day_of_week: day,
+                        start_time: rm.dataset.start,
+                        end_time: rm.dataset.end
+                    });
+                });
+            });
+
+            const csrf = document.querySelector('[name="csrf_token"]')?.value;
+            const fd = new FormData();
+            fd.append('csrf_token', csrf);
+            fd.append('slots', JSON.stringify(slots));
+            fetch('/dateapp/settings/availability', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        saveBtn.textContent = '✓ Saved!';
+                        setTimeout(() => { saveBtn.textContent = 'Save Availability'; }, 2000);
+                    } else {
+                        alert(data.error || 'Failed to save.');
+                    }
+                });
+        });
+    }
+
 })();

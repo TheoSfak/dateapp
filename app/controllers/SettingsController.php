@@ -8,6 +8,7 @@ use App\Core\View;
 use App\Models\Block;
 use App\Models\Report;
 use App\Models\Interaction;
+use App\Models\Availability;
 
 class SettingsController extends Controller
 {
@@ -16,10 +17,12 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         $dbUser = \App\Models\User::findById($user['id']);
         $blocked = Block::getBlockedByUser($user['id']);
+        $availSlots = Availability::getByUserId($user['id']);
 
         View::render('settings/index', [
-            'user'    => $dbUser,
-            'blocked' => $blocked,
+            'user'        => $dbUser,
+            'blocked'     => $blocked,
+            'availSlots'  => $availSlots,
         ]);
     }
 
@@ -163,5 +166,35 @@ class SettingsController extends Controller
         session_start();
         Session::flash('success', 'Your account has been deleted.');
         $this->redirect('/');
+    }
+
+    /**
+     * Save availability calendar slots (AJAX).
+     */
+    public function saveAvailability(): void
+    {
+        $user = $this->requireAuth();
+        header('Content-Type: application/json');
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
+            echo json_encode(['error' => 'Invalid CSRF']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input) || !isset($input['slots'])) {
+            echo json_encode(['error' => 'Invalid request']);
+            return;
+        }
+
+        $slots = $input['slots'];
+        if (!is_array($slots) || count($slots) > 21) {
+            echo json_encode(['error' => 'Too many slots (max 21)']);
+            return;
+        }
+
+        Availability::saveSlots($user['id'], $slots);
+        echo json_encode(['success' => true]);
     }
 }
