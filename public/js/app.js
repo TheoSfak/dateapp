@@ -960,6 +960,216 @@
         });
     }
 
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ VISUAL ENHANCEMENT – Micro-interactions & Animations
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Scroll-Reveal (Intersection Observer) ─────────────── */
+(function initReveal() {
+    const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+    if (!revealEls.length) return;
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                obs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    revealEls.forEach(el => obs.observe(el));
+})();
+
+/* ─── Auto-add reveal classes to key sections ───────────── */
+(function autoReveal() {
+    const selectors = [
+        '.dash-section',
+        '.dash-cta',
+        '.dash-stats',
+        '.how-step',
+        '.feature-card',
+        '.testimonial-card',
+        '.landing-stats',
+        '.landing-how',
+        '.profile-section',
+        '.settings-card',
+        '.game-option',
+        '.premium-feature-card',
+        '.admin-card',
+        '.admin-stat-card'
+    ];
+    selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach((el, i) => {
+            if (!el.classList.contains('reveal') &&
+                !el.classList.contains('reveal-left') &&
+                !el.classList.contains('reveal-right')) {
+                el.classList.add('reveal');
+                el.style.transitionDelay = (i * 0.07) + 's';
+            }
+        });
+    });
+    // Re-observe newly added elements
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                obs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => obs.observe(el));
+})();
+
+/* ─── Button Ripple Effect ──────────────────────────────── */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn');
+    if (!btn) return;
+    const ripple = document.createElement('span');
+    ripple.classList.add('btn-ripple');
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+});
+
+/* ─── Animated Counter for Stats ────────────────────────── */
+(function animateCounters() {
+    const counters = document.querySelectorAll('.dash-stat-value, .stat-number');
+    if (!counters.length) return;
+    const obs = new IntersectionObserver((entries) => {
+        entries.forEach(ent => {
+            if (!ent.isIntersecting) return;
+            const el = ent.target;
+            const text = el.textContent.trim();
+            const match = text.match(/^([\d,.]+)(\D*)$/);
+            if (!match) return;
+            const target = parseFloat(match[1].replace(/,/g, ''));
+            const suffix = match[2] || '';
+            const isFloat = match[1].includes('.');
+            const duration = 1200;
+            const start = performance.now();
+            function tick(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = target * eased;
+                el.textContent = (isFloat ? current.toFixed(1) : Math.round(current).toLocaleString()) + suffix;
+                if (progress < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+            obs.unobserve(el);
+        });
+    }, { threshold: 0.5 });
+    counters.forEach(c => obs.observe(c));
+})();
+
+/* ─── Confetti Effect on Match ──────────────────────────── */
+function launchConfetti() {
+    const colors = ['#e63946', '#ff6b6b', '#ffd700', '#00d4ff', '#ff8e53', '#2ee59d', '#764ba2'];
+    const container = document.body;
+    for (let i = 0; i < 60; i++) {
+        const piece = document.createElement('div');
+        piece.classList.add('confetti-piece');
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        piece.style.animationDelay = (Math.random() * 0.5) + 's';
+        const shapes = ['circle', ''];
+        if (Math.random() > 0.5) {
+            piece.style.borderRadius = '50%';
+        } else {
+            piece.style.width = (6 + Math.random() * 8) + 'px';
+            piece.style.height = (6 + Math.random() * 8) + 'px';
+        }
+        container.appendChild(piece);
+        piece.addEventListener('animationend', () => piece.remove());
+    }
+}
+
+// Hook confetti to match modal appearance
+(function watchMatchModal() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(m => {
+            m.addedNodes.forEach(node => {
+                if (node.nodeType === 1 && (node.classList?.contains('match-modal') || node.querySelector?.('.match-modal'))) {
+                    launchConfetti();
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
+/* ─── Page Enter Animation ──────────────────────────────── */
+(function pageEnter() {
+    const main = document.querySelector('main') || document.querySelector('.container');
+    if (main) main.classList.add('page-enter');
+})();
+
+/* ─── Smooth Scroll for Anchor Links ────────────────────── */
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+
+/* ─── Active Nav Highlight ──────────────────────────────── */
+(function highlightActiveNav() {
+    const path = window.location.pathname;
+    document.querySelectorAll('.main-nav a, .bottom-nav a').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && path.includes(href.replace('/dateapp', ''))) {
+            link.classList.add('active');
+        }
+    });
+})();
+
+/* ─── Parallax-lite on Hero Photos ──────────────────────── */
+(function heroParallax() {
+    const hero = document.querySelector('.landing-hero');
+    if (!hero) return;
+    const photos = hero.querySelectorAll('.hero-photo');
+    if (!photos.length) return;
+    window.addEventListener('scroll', function() {
+        const scrollY = window.scrollY;
+        if (scrollY > window.innerHeight) return;
+        photos.forEach((photo, i) => {
+            const speed = 0.03 + (i * 0.015);
+            photo.style.transform = 'translateY(' + (scrollY * speed) + 'px)';
+        });
+    }, { passive: true });
+})();
+
+/* ─── Tilt Effect on Swipe Cards (desktop) ──────────────── */
+(function cardTilt() {
+    if (window.innerWidth < 768) return;
+    const stack = document.querySelector('.swipe-stack');
+    if (!stack) return;
+    stack.addEventListener('mousemove', function(e) {
+        const card = stack.querySelector('.swipe-card:last-child');
+        if (!card || card.dataset.dragging) return;
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -5;
+        const rotateY = ((x - centerX) / centerX) * 5;
+        card.style.transform = 'perspective(800px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) scale(1.02)';
+    });
+    stack.addEventListener('mouseleave', function() {
+        const card = stack.querySelector('.swipe-card:last-child');
+        if (card) card.style.transform = '';
+    });
+})();
+
     // ═══════════════════════════════════════════════════════
     // REWIND (UNDO LAST SWIPE)
     // ═══════════════════════════════════════════════════════

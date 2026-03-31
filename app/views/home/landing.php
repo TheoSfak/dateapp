@@ -38,7 +38,7 @@
 </section>
 
 <!-- ─── STATS BAR ────────────────────────────────────────── -->
-<section class="landing-stats">
+<section class="landing-stats reveal">
     <div class="landing-stats-inner">
         <div class="stat-item">
             <span class="stat-number">50K+</span>
@@ -63,7 +63,7 @@
 </section>
 
 <!-- ─── HOW IT WORKS ─────────────────────────────────────── -->
-<section class="landing-how">
+<section class="landing-how reveal">
     <div class="landing-section-inner">
         <h2 class="landing-section-title">How DateApp Works</h2>
         <p class="landing-section-sub">Three simple steps to find your person</p>
@@ -103,12 +103,12 @@
 </section>
 
 <!-- ─── FEATURED PROFILES ────────────────────────────────── -->
-<section class="landing-profiles">
+<section class="landing-profiles reveal">
     <div class="landing-section-inner">
         <h2 class="landing-section-title">People You Could Meet</h2>
         <p class="landing-section-sub">Real people, real connections — join them today</p>
         <div class="profile-showcase">
-            <div class="showcase-card">
+            <div class="showcase-card reveal stagger-1">
                 <div class="showcase-img">
                     <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=520&fit=crop&crop=face" alt="">
                     <div class="showcase-badge">New</div>
@@ -118,7 +118,7 @@
                     <span>Athens · 2km away</span>
                 </div>
             </div>
-            <div class="showcase-card showcase-card-featured">
+            <div class="showcase-card showcase-card-featured reveal stagger-2">
                 <div class="showcase-img">
                     <img src="https://images.unsplash.com/photo-1488161628813-04466f0016e4?w=400&h=520&fit=crop&crop=face" alt="">
                     <div class="showcase-badge badge-hot">🔥 Popular</div>
@@ -128,7 +128,7 @@
                     <span>Thessaloniki · 5km away</span>
                 </div>
             </div>
-            <div class="showcase-card">
+            <div class="showcase-card reveal stagger-3">
                 <div class="showcase-img">
                     <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=520&fit=crop&crop=face" alt="">
                     <div class="showcase-badge">Verified ✓</div>
@@ -138,7 +138,7 @@
                     <span>Athens · 1km away</span>
                 </div>
             </div>
-            <div class="showcase-card">
+            <div class="showcase-card reveal stagger-4">
                 <div class="showcase-img">
                     <img src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=520&fit=crop&crop=face" alt="">
                 </div>
@@ -152,7 +152,7 @@
 </section>
 
 <!-- ─── FEATURES ─────────────────────────────────────────── -->
-<section class="landing-features">
+<section class="landing-features reveal">
     <div class="landing-section-inner">
         <h2 class="landing-section-title">Why Choose DateApp</h2>
         <p class="landing-section-sub">Built different, on purpose</p>
@@ -216,7 +216,7 @@
 </section>
 
 <!-- ─── TESTIMONIALS ─────────────────────────────────────── -->
-<section class="landing-testimonials">
+<section class="landing-testimonials reveal">
     <div class="landing-section-inner">
         <h2 class="landing-section-title">Love Stories</h2>
         <p class="landing-section-sub">From our community</p>
@@ -259,7 +259,7 @@
 </section>
 
 <!-- ─── FINAL CTA ────────────────────────────────────────── -->
-<section class="landing-cta">
+<section class="landing-cta reveal-scale">
     <div class="landing-cta-inner">
         <div class="cta-floating-hearts">
             <span class="floating-heart" style="left:10%;animation-delay:0s">💕</span>
