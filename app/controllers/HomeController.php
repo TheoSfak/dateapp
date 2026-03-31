@@ -8,6 +8,7 @@ use App\Models\MatchModel;
 use App\Models\Message;
 use App\Models\Interaction;
 use App\Models\Profile;
+use App\Models\Photo;
 use App\Core\Config;
 
 class HomeController extends Controller
@@ -27,14 +28,41 @@ class HomeController extends Controller
         $dailyLimit = Config::get('app.free_daily_swipes', 50);
         $hasProfile = !empty($profile['name']);
 
+        // Recent matches (last 10 with photos) for the horizontal scroll
+        $recentMatches = MatchModel::getByUserId($userId);
+        $recentMatches = array_slice($recentMatches, 0, 10);
+
+        // Profile completeness
+        $photoCount = Photo::countByUserId($userId);
+        $completeness = $this->calcCompleteness($profile, $photoCount);
+
         View::render('home/dashboard', [
-            'email'       => Session::get('user_email'),
-            'profile'     => $profile,
-            'matchCount'  => $matchCount,
-            'unread'      => $unread,
-            'swipesToday' => $swipesToday,
-            'dailyLimit'  => $dailyLimit,
-            'hasProfile'  => $hasProfile,
+            'email'          => Session::get('user_email'),
+            'profile'        => $profile,
+            'matchCount'     => $matchCount,
+            'unread'         => $unread,
+            'swipesToday'    => $swipesToday,
+            'dailyLimit'     => $dailyLimit,
+            'hasProfile'     => $hasProfile,
+            'recentMatches'  => $recentMatches,
+            'photoCount'     => $photoCount,
+            'completeness'   => $completeness,
         ]);
+    }
+
+    private function calcCompleteness(?array $profile, int $photoCount): int
+    {
+        if (!$profile) return 0;
+        $score = 0;
+        if (!empty($profile['name']))           $score += 15;
+        if (!empty($profile['bio']))            $score += 15;
+        if (!empty($profile['date_of_birth']))  $score += 10;
+        if (!empty($profile['gender']))         $score += 10;
+        if (!empty($profile['looking_for']))    $score += 5;
+        if (!empty($profile['city']))           $score += 10;
+        if ($photoCount >= 1)                   $score += 20;
+        if ($photoCount >= 3)                   $score += 10;
+        if (!empty($profile['relationship_goal']) && $profile['relationship_goal'] !== 'undecided') $score += 5;
+        return min(100, $score);
     }
 }
