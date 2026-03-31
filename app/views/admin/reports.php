@@ -21,7 +21,7 @@
             <div class="report-body">
                 <div class="report-users">
                     <span><strong>Reporter:</strong> <?= htmlspecialchars($r['reporter_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?> (#<?= (int)$r['reporter_id'] ?>)</span>
-                    <span><strong>Reported:</strong> <a href="/dateapp/profile/view/<?= (int)$r['reported_id'] ?>"><?= htmlspecialchars($r['reported_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></a> (#<?= (int)$r['reported_id'] ?>)</span>
+                    <span><strong>Reported:</strong> <a href="/dateapp/user?id=<?= (int)$r['reported_id'] ?>"><?= htmlspecialchars($r['reported_name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></a> (#<?= (int)$r['reported_id'] ?>)</span>
                 </div>
                 <div class="report-reason">
                     <strong>Reason:</strong> <?= htmlspecialchars($r['reason'], ENT_QUOTES, 'UTF-8') ?>

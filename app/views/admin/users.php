@@ -35,7 +35,7 @@
                 <tr>
                     <td><?= (int)$u['id'] ?></td>
                     <td>
-                        <a href="/dateapp/profile/view/<?= (int)$u['id'] ?>"><?= htmlspecialchars($u['name'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?></a>
+                        <a href="/dateapp/user?id=<?= (int)$u['id'] ?>"><?= htmlspecialchars($u['name'] ?? 'N/A', ENT_QUOTES, 'UTF-8') ?></a>
                     </td>
                     <td><?= htmlspecialchars($u['email'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><span class="badge badge-<?= htmlspecialchars($u['status'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst($u['status']), ENT_QUOTES, 'UTF-8') ?></span></td>

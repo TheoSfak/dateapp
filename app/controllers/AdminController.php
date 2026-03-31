@@ -32,7 +32,7 @@ class AdminController extends Controller
         $db = \App\Core\Database::getInstance();
         $stats = [
             'total_users'   => $db->query("SELECT COUNT(*) as c FROM users")->fetch()['c'],
-            'active_users'  => $db->query("SELECT COUNT(*) as c FROM users WHERE status='active'")->fetch()['c'],
+            'active_today'  => $db->query("SELECT COUNT(*) as c FROM users WHERE DATE(last_login_at)=CURDATE()")->fetch()['c'],
             'premium_users' => $db->query("SELECT COUNT(*) as c FROM users WHERE is_premium=1")->fetch()['c'],
             'total_matches' => $db->query("SELECT COUNT(*) as c FROM matches")->fetch()['c'],
             'total_messages'=> $db->query("SELECT COUNT(*) as c FROM messages")->fetch()['c'],
@@ -48,7 +48,7 @@ class AdminController extends Controller
         $this->requireAdmin();
         $db = \App\Core\Database::getInstance();
 
-        $search = trim($_GET['search'] ?? '');
+        $search = trim($_GET['q'] ?? $_GET['search'] ?? '');
         $status = $_GET['status'] ?? '';
 
         $sql = "SELECT u.*, p.name, p.city,
@@ -118,6 +118,9 @@ class AdminController extends Controller
                     );
                     Report::updateStatus($reportId, 'reviewed');
                     Session::flash('success', 'User banned and report resolved.');
+                } elseif ($action === 'warn') {
+                    Report::updateStatus($reportId, 'reviewed');
+                    Session::flash('success', 'Warning noted. Report marked as reviewed.');
                 } elseif ($action === 'dismiss') {
                     Report::updateStatus($reportId, 'dismissed');
                     Session::flash('success', 'Report dismissed.');

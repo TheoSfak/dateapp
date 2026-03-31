@@ -16,11 +16,16 @@ class DiscoverController extends Controller
     {
         $user = $this->requireAuth();
 
-        // Get filter params from query string or session
+        // Get filter params from query string or session with validation
+        $minAge = max(18, min(99, (int)($_GET['min_age'] ?? Session::get('filter_min_age', 18))));
+        $maxAge = max(18, min(99, (int)($_GET['max_age'] ?? Session::get('filter_max_age', 99))));
+        $maxDist = max(1, min(500, (int)($_GET['max_distance'] ?? Session::get('filter_max_distance', 100))));
+        if ($minAge > $maxAge) { $minAge = 18; $maxAge = 99; }
+
         $filters = [
-            'min_age'      => $_GET['min_age'] ?? Session::get('filter_min_age', 18),
-            'max_age'      => $_GET['max_age'] ?? Session::get('filter_max_age', 99),
-            'max_distance' => $_GET['max_distance'] ?? Session::get('filter_max_distance', 100),
+            'min_age'      => $minAge,
+            'max_age'      => $maxAge,
+            'max_distance' => $maxDist,
         ];
 
         // Save filters to session
@@ -62,9 +67,13 @@ class DiscoverController extends Controller
 
         $input = json_decode(file_get_contents('php://input'), true);
         $targetId = (int)($input['target_id'] ?? 0);
-        $action   = $input['action'] ?? '';
+        $rawType  = $input['type'] ?? '';
 
-        if (!in_array($action, ['like', 'dislike', 'superlike'])) {
+        // Map JS 'pass' to DB 'dislike', 'super_like' to 'superlike'
+        $typeMap = ['like' => 'like', 'pass' => 'dislike', 'super_like' => 'superlike', 'superlike' => 'superlike', 'dislike' => 'dislike'];
+        $action = $typeMap[$rawType] ?? '';
+
+        if ($action === '') {
             echo json_encode(['error' => 'Invalid action']);
             return;
         }
@@ -86,13 +95,12 @@ class DiscoverController extends Controller
 
         $result = Interaction::create($user['id'], $targetId, $action);
 
-        $response = ['result' => $result];
+        $response = ['result' => $result, 'match' => false];
         if ($result === 'match') {
             $matchProfile = Profile::getFullProfile($targetId);
-            $response['match'] = [
-                'name'  => $matchProfile['name'] ?? 'Someone',
-                'photo' => $matchProfile['primary_photo'] ?? null,
-            ];
+            $response['match'] = true;
+            $response['match_name'] = $matchProfile['name'] ?? 'Someone';
+            $response['match_photo'] = $matchProfile['primary_photo'] ?? null;
         }
 
         echo json_encode($response);

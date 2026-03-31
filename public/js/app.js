@@ -226,12 +226,13 @@
         }
 
         function appendMessage(msg) {
-            const userId = document.querySelector('[data-user-id]')?.dataset.userId || '0';
+            const userId = document.getElementById('chatMessages')?.dataset.userId || '0';
             const isMine = String(msg.sender_id) === String(userId);
             const div = document.createElement('div');
             div.className = 'chat-bubble ' + (isMine ? 'chat-bubble-mine' : 'chat-bubble-theirs');
             div.dataset.msgId = msg.id;
-            div.innerHTML = '<p>' + escapeHtml(msg.body) + '</p><span class="chat-time">' + formatTime(msg.created_at) + '</span>';
+            const text = msg.body || msg.message_text || '';
+            div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(msg.created_at || msg.sent_at) + '</span>';
             messages.appendChild(div);
         }
     }
@@ -253,7 +254,8 @@
                     const div = document.createElement('div');
                     div.className = 'chat-bubble chat-bubble-mine';
                     div.dataset.msgId = data.message.id;
-                    div.innerHTML = '<p>' + escapeHtml(data.message.body) + '</p><span class="chat-time">' + formatTime(data.message.created_at) + '</span>';
+                    const text = data.message.body || data.message.message_text || '';
+                    div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(data.message.created_at || data.message.sent_at) + '</span>';
                     messages.appendChild(div);
                     messages.scrollTop = messages.scrollHeight;
                 }
@@ -279,7 +281,7 @@
     window.reportUser = function(userId) {
         const reason = prompt('Why are you reporting this user?');
         if (!reason) return;
-        ajax('POST', '/settings/report', { reported_id: userId, reason: reason })
+        ajax('POST', '/report', { reported_id: userId, reason: reason })
             .then(data => {
                 if (data.success) alert('Report submitted. Thank you.');
                 else alert(data.error || 'Failed to submit report.');
@@ -289,7 +291,7 @@
 
     window.blockUser = function(userId) {
         if (!confirm('Block this user? They won\'t be able to see or message you.')) return;
-        ajax('POST', '/settings/block', { blocked_id: userId })
+        ajax('POST', '/block', { blocked_id: userId })
             .then(data => {
                 if (data.success) { alert('User blocked.'); window.location.reload(); }
                 else alert(data.error || 'Failed to block user.');

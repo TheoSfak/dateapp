@@ -3,7 +3,7 @@ namespace App\Models;
 
 use App\Core\Model;
 
-class Match extends Model
+class MatchModel extends Model
 {
     protected static string $table = 'matches';
 

@@ -35,7 +35,7 @@ class SettingsController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
-        $targetId = (int)($input['user_id'] ?? 0);
+        $targetId = (int)($input['blocked_id'] ?? $input['user_id'] ?? 0);
         if ($targetId > 0 && $targetId !== $user['id']) {
             Block::block($user['id'], $targetId);
             echo json_encode(['success' => true]);
@@ -48,7 +48,7 @@ class SettingsController extends Controller
     {
         $user = $this->requireAuth();
         CSRF::validate();
-        $targetId = (int)($_POST['user_id'] ?? 0);
+        $targetId = (int)($_POST['blocked_id'] ?? $_POST['user_id'] ?? 0);
         if ($targetId > 0) {
             Block::unblock($user['id'], $targetId);
             Session::flash('success', 'User unblocked.');
@@ -68,7 +68,7 @@ class SettingsController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
-        $targetId = (int)($input['user_id'] ?? 0);
+        $targetId = (int)($input['reported_id'] ?? $input['user_id'] ?? 0);
         $reason   = trim($input['reason'] ?? '');
 
         if ($targetId > 0 && $reason !== '' && $targetId !== $user['id']) {
@@ -94,5 +94,72 @@ class SettingsController extends Controller
 
         $likers = Interaction::getLikers($user['id']);
         View::render('discover/liked_me', ['likers' => $likers]);
+    }
+
+    /**
+     * Change password.
+     */
+    public function changePassword(): void
+    {
+        $user = $this->requireAuth();
+        CSRF::validate();
+
+        $current = $_POST['current_password'] ?? '';
+        $new     = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+
+        if ($new === '' || strlen($new) < 8) {
+            Session::flash('error', 'New password must be at least 8 characters.');
+            $this->redirect('/settings');
+            return;
+        }
+
+        if ($new !== $confirm) {
+            Session::flash('error', 'New passwords do not match.');
+            $this->redirect('/settings');
+            return;
+        }
+
+        $dbUser = \App\Models\User::findById($user['id']);
+        if (!password_verify($current, $dbUser['password_hash'])) {
+            Session::flash('error', 'Current password is incorrect.');
+            $this->redirect('/settings');
+            return;
+        }
+
+        $newHash = password_hash($new, PASSWORD_BCRYPT, ['cost' => 12]);
+        \App\Core\Database::getInstance()->query(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            [$newHash, $user['id']]
+        );
+
+        Session::flash('success', 'Password changed successfully.');
+        $this->redirect('/settings');
+    }
+
+    /**
+     * Delete account.
+     */
+    public function deleteAccount(): void
+    {
+        $user = $this->requireAuth();
+        CSRF::validate();
+
+        $password = $_POST['confirm_delete_password'] ?? '';
+        $dbUser = \App\Models\User::findById($user['id']);
+
+        if (!password_verify($password, $dbUser['password_hash'])) {
+            Session::flash('error', 'Incorrect password. Account not deleted.');
+            $this->redirect('/settings');
+            return;
+        }
+
+        // Delete user (cascades to profiles, photos, interactions, matches, messages, reports, blocks)
+        \App\Core\Database::getInstance()->query("DELETE FROM users WHERE id = ?", [$user['id']]);
+
+        Session::destroy();
+        session_start();
+        Session::flash('success', 'Your account has been deleted.');
+        $this->redirect('/');
     }
 }

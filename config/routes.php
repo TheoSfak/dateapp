@@ -50,6 +50,8 @@ return [
     'POST /unblock'         => [SettingsController::class, 'unblockUser'],
     'POST /report'          => [SettingsController::class, 'reportUser'],
     'GET /liked-me'         => [SettingsController::class, 'likedMe'],
+    'POST /settings/password' => [SettingsController::class, 'changePassword'],
+    'POST /settings/delete'   => [SettingsController::class, 'deleteAccount'],
 
     // Admin
     'GET /admin'               => [AdminController::class, 'dashboard'],

@@ -4,7 +4,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\View;
 use App\Core\Session;
-use App\Models\Match;
+use App\Models\MatchModel;
 use App\Models\Message;
 use App\Models\Interaction;
 use App\Models\Profile;
@@ -21,7 +21,7 @@ class HomeController extends Controller
 
         $userId = Session::get('user_id');
         $profile = Profile::getFullProfile($userId);
-        $matchCount = Match::countByUserId($userId);
+        $matchCount = MatchModel::countByUserId($userId);
         $unread = Message::totalUnread($userId);
         $swipesToday = Interaction::getTodaySwipeCount($userId);
         $dailyLimit = Config::get('app.free_daily_swipes', 50);

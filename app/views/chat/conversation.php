@@ -11,18 +11,18 @@
                     <div class="avatar-placeholder"><?= strtoupper(substr($otherUser['name'] ?? '?', 0, 1)) ?></div>
                 <?php endif; ?>
             </div>
-            <a href="/dateapp/profile/view/<?= (int)$otherUser['id'] ?>" class="chat-user-name"><?= htmlspecialchars($otherUser['name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></a>
+            <a href="/dateapp/user?id=<?= (int)$otherUser['id'] ?>" class="chat-user-name"><?= htmlspecialchars($otherUser['name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></a>
         </div>
         <button class="chat-menu-btn" onclick="toggleChatMenu()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>
         <div class="chat-menu" id="chatMenu">
-            <a href="/dateapp/profile/view/<?= (int)$otherUser['id'] ?>">View Profile</a>
+            <a href="/dateapp/user?id=<?= (int)$otherUser['id'] ?>">View Profile</a>
             <button onclick="unmatchUser(<?= (int)$match['id'] ?>)" class="text-danger">Unmatch</button>
         </div>
     </div>
 
-    <div class="chat-messages" id="chatMessages" data-match-id="<?= (int)$match['id'] ?>">
+    <div class="chat-messages" id="chatMessages" data-match-id="<?= (int)$match['id'] ?>" data-user-id="<?= (int)$userId ?>">
         <?php if (empty($messages)): ?>
             <div class="chat-empty">
                 <p>You matched! Start the conversation 🎉</p>
@@ -31,15 +31,15 @@
         <?php
         $lastDate = '';
         foreach ($messages as $msg):
-            $msgDate = date('M j, Y', strtotime($msg['created_at']));
+            $msgDate = date('M j, Y', strtotime($msg['sent_at']));
             if ($msgDate !== $lastDate):
                 $lastDate = $msgDate;
         ?>
             <div class="chat-date-sep"><?= htmlspecialchars($msgDate, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
             <div class="chat-bubble <?= (int)$msg['sender_id'] === (int)$userId ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>">
-                <p><?= nl2br(htmlspecialchars($msg['body'], ENT_QUOTES, 'UTF-8')) ?></p>
-                <span class="chat-time"><?= date('g:i A', strtotime($msg['created_at'])) ?></span>
+                <p><?= nl2br(htmlspecialchars($msg['message_text'], ENT_QUOTES, 'UTF-8')) ?></p>
+                <span class="chat-time"><?= date('g:i A', strtotime($msg['sent_at'])) ?></span>
             </div>
         <?php endforeach; ?>
     </div>

@@ -323,6 +323,7 @@ select { cursor: pointer; }
 .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--gray); }
 
 /* ─── Alerts ────────────────────────────────────────────── */
+.form-input { width: 100%; }
 .alert {
     padding: 0.9rem 1.25rem;
     border-radius: var(--radius-sm);

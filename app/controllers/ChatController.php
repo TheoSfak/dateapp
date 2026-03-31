@@ -4,7 +4,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\View;
 use App\Core\Session;
-use App\Models\Match;
+use App\Models\MatchModel;
 use App\Models\Message;
 use App\Models\Profile;
 
@@ -16,7 +16,7 @@ class ChatController extends Controller
     public function matches(): void
     {
         $user = $this->requireAuth();
-        $matches = Match::getByUserId($user['id']);
+        $matches = MatchModel::getByUserId($user['id']);
         $unread  = Message::totalUnread($user['id']);
 
         View::render('chat/matches', [
@@ -35,7 +35,7 @@ class ChatController extends Controller
         if ($matchId <= 0) $this->redirect('/matches');
 
         // Verify user is part of this match
-        $match = Match::findById($matchId);
+        $match = MatchModel::findById($matchId);
         if (!$match || ($match['user_1_id'] !== $user['id'] && $match['user_2_id'] !== $user['id'])) {
             $this->redirect('/matches');
         }
@@ -48,10 +48,10 @@ class ChatController extends Controller
         Message::markRead($matchId, $user['id']);
 
         View::render('chat/conversation', [
-            'match'    => $match,
-            'other'    => $otherProfile,
-            'messages' => $messages,
-            'userId'   => $user['id'],
+            'match'     => $match,
+            'otherUser' => $otherProfile,
+            'messages'  => $messages,
+            'userId'    => $user['id'],
         ]);
     }
 
@@ -72,7 +72,7 @@ class ChatController extends Controller
 
         $input = json_decode(file_get_contents('php://input'), true);
         $matchId = (int)($input['match_id'] ?? 0);
-        $text    = trim($input['message'] ?? '');
+        $text    = trim($input['body'] ?? '');
 
         if ($matchId <= 0 || $text === '') {
             echo json_encode(['error' => 'Invalid message']);
@@ -80,7 +80,7 @@ class ChatController extends Controller
         }
 
         // Verify user is part of match
-        $match = Match::findById($matchId);
+        $match = MatchModel::findById($matchId);
         if (!$match || ($match['user_1_id'] !== $user['id'] && $match['user_2_id'] !== $user['id'])) {
             echo json_encode(['error' => 'Unauthorized']);
             return;
@@ -91,10 +91,10 @@ class ChatController extends Controller
         echo json_encode([
             'success' => true,
             'message' => [
-                'id'           => $msgId,
-                'sender_id'    => $user['id'],
-                'message_text' => $text,
-                'sent_at'      => date('Y-m-d H:i:s'),
+                'id'         => $msgId,
+                'sender_id'  => $user['id'],
+                'body'       => $text,
+                'created_at' => date('Y-m-d H:i:s'),
             ],
         ]);
     }
@@ -108,14 +108,14 @@ class ChatController extends Controller
         header('Content-Type: application/json');
 
         $matchId = (int)($_GET['match_id'] ?? 0);
-        $afterId = (int)($_GET['after_id'] ?? 0);
+        $afterId = (int)($_GET['last_id'] ?? 0);
 
         if ($matchId <= 0) {
             echo json_encode(['messages' => []]);
             return;
         }
 
-        $match = Match::findById($matchId);
+        $match = MatchModel::findById($matchId);
         if (!$match || ($match['user_1_id'] !== $user['id'] && $match['user_2_id'] !== $user['id'])) {
             echo json_encode(['messages' => []]);
             return;
@@ -145,7 +145,7 @@ class ChatController extends Controller
         $input = json_decode(file_get_contents('php://input'), true);
         $matchId = (int)($input['match_id'] ?? 0);
 
-        Match::unmatch($matchId, $user['id']);
+        MatchModel::unmatch($matchId, $user['id']);
         echo json_encode(['success' => true]);
     }
 }

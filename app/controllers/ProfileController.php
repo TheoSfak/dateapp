@@ -40,20 +40,88 @@ class ProfileController extends Controller
         $user = $this->requireAuth();
         CSRF::validate();
 
+        $errors = [];
+
+        $name = trim($_POST['name'] ?? '');
+        if ($name !== '' && (mb_strlen($name) < 2 || mb_strlen($name) > 100)) {
+            $errors[] = 'Name must be 2-100 characters.';
+        }
+
+        $bio = trim($_POST['bio'] ?? '');
+        if (mb_strlen($bio) > 2000) {
+            $errors[] = 'Bio must be under 2000 characters.';
+        }
+
+        $dob = $_POST['date_of_birth'] ?? '';
+        if ($dob !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob)) {
+            $errors[] = 'Invalid date of birth format.';
+        } elseif ($dob !== '') {
+            $age = Profile::calculateAge($dob);
+            if ($age !== null && ($age < 18 || $age > 120)) {
+                $errors[] = 'You must be between 18 and 120 years old.';
+            }
+        }
+
+        $gender = $_POST['gender'] ?? '';
+        if ($gender !== '' && !in_array($gender, ['male', 'female', 'non-binary', 'other'])) {
+            $errors[] = 'Invalid gender.';
+        }
+
+        $lookingFor = $_POST['looking_for'] ?? '';
+        if ($lookingFor !== '' && !in_array($lookingFor, ['male', 'female', 'everyone'])) {
+            $errors[] = 'Invalid looking for value.';
+        }
+
+        $goal = $_POST['relationship_goal'] ?? '';
+        if ($goal !== '' && !in_array($goal, ['long-term', 'short-term', 'friendship', 'casual', 'undecided'])) {
+            $errors[] = 'Invalid relationship goal.';
+        }
+
+        $heightCm = $_POST['height_cm'] ?? '';
+        if ($heightCm !== '' && (!is_numeric($heightCm) || $heightCm < 50 || $heightCm > 300)) {
+            $errors[] = 'Height must be between 50 and 300 cm.';
+        }
+
+        $smoking = $_POST['smoking'] ?? '';
+        if ($smoking !== '' && !in_array($smoking, ['never', 'sometimes', 'regularly'])) {
+            $errors[] = 'Invalid smoking value.';
+        }
+
+        $drinking = $_POST['drinking'] ?? '';
+        if ($drinking !== '' && !in_array($drinking, ['never', 'sometimes', 'regularly'])) {
+            $errors[] = 'Invalid drinking value.';
+        }
+
+        $lat = $_POST['latitude'] ?? '';
+        if ($lat !== '' && (!is_numeric($lat) || $lat < -90 || $lat > 90)) {
+            $errors[] = 'Invalid latitude.';
+        }
+
+        $lng = $_POST['longitude'] ?? '';
+        if ($lng !== '' && (!is_numeric($lng) || $lng < -180 || $lng > 180)) {
+            $errors[] = 'Invalid longitude.';
+        }
+
+        if (!empty($errors)) {
+            \App\Core\Session::flash('error', implode(' ', $errors));
+            $this->redirect('/profile/edit');
+            return;
+        }
+
         Profile::update($user['id'], [
-            'name'              => trim($_POST['name'] ?? ''),
-            'bio'               => trim($_POST['bio'] ?? ''),
-            'date_of_birth'     => $_POST['date_of_birth'] ?? '',
-            'gender'            => $_POST['gender'] ?? '',
-            'looking_for'       => $_POST['looking_for'] ?? '',
-            'relationship_goal' => $_POST['relationship_goal'] ?? '',
-            'height_cm'         => $_POST['height_cm'] ?? '',
-            'smoking'           => $_POST['smoking'] ?? '',
-            'drinking'          => $_POST['drinking'] ?? '',
+            'name'              => $name,
+            'bio'               => $bio,
+            'date_of_birth'     => $dob,
+            'gender'            => $gender,
+            'looking_for'       => $lookingFor,
+            'relationship_goal' => $goal,
+            'height_cm'         => $heightCm,
+            'smoking'           => $smoking,
+            'drinking'          => $drinking,
             'city'              => trim($_POST['city'] ?? ''),
             'country'           => trim($_POST['country'] ?? ''),
-            'latitude'          => $_POST['latitude'] ?? '',
-            'longitude'         => $_POST['longitude'] ?? '',
+            'latitude'          => $lat,
+            'longitude'         => $lng,
         ]);
 
         \App\Core\Session::flash('success', 'Profile updated successfully!');
@@ -116,7 +184,7 @@ class ProfileController extends Controller
 
         $photos = Photo::getByUserId($targetId);
         $age = Profile::calculateAge($profile['date_of_birth'] ?? null);
-        $isMatched = \App\Models\Match::areMatched($user['id'], $targetId);
+        $isMatched = \App\Models\MatchModel::areMatched($user['id'], $targetId);
 
         View::render('profile/view', [
             'profile'   => $profile,
