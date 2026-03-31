@@ -18,12 +18,20 @@ class MatchModel extends Model
                     p.name, p.city,
                     TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) as age,
                     ph.file_path as photo,
-                    (SELECT msg.message_text FROM messages msg WHERE msg.match_id = m.id ORDER BY msg.sent_at DESC LIMIT 1) as last_message,
-                    (SELECT msg.sent_at FROM messages msg WHERE msg.match_id = m.id ORDER BY msg.sent_at DESC LIMIT 1) as last_message_at,
-                    (SELECT COUNT(*) FROM messages msg WHERE msg.match_id = m.id AND msg.sender_id != ? AND msg.is_read = 0) as unread_count
+                    lm.message_text as last_message,
+                    lm.sent_at as last_message_at,
+                    IFNULL(ur.unread_count, 0) as unread_count
              FROM matches m
              JOIN profiles p ON p.user_id = CASE WHEN m.user_1_id = ? THEN m.user_2_id ELSE m.user_1_id END
              LEFT JOIN photos ph ON ph.user_id = p.user_id AND ph.is_primary = 1
+             LEFT JOIN messages lm ON lm.match_id = m.id
+                 AND lm.sent_at = (SELECT MAX(msg.sent_at) FROM messages msg WHERE msg.match_id = m.id)
+             LEFT JOIN (
+                 SELECT match_id, COUNT(*) as unread_count
+                 FROM messages
+                 WHERE sender_id != ? AND is_read = 0
+                 GROUP BY match_id
+             ) ur ON ur.match_id = m.id
              WHERE m.user_1_id = ? OR m.user_2_id = ?
              ORDER BY last_message_at DESC, m.matched_at DESC",
             [$userId, $userId, $userId, $userId, $userId]

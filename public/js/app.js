@@ -208,7 +208,7 @@
 
         // Poll for new messages every 3 seconds
         let lastMsgId = getLastMsgId();
-        setInterval(() => {
+        const pollInterval = setInterval(() => {
             fetch(BASE + '/chat/poll?match_id=' + matchId + '&last_id=' + lastMsgId, {
                 headers: { 'X-CSRF-Token': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
             })
@@ -224,6 +224,9 @@
             })
             .catch(() => {});
         }, 3000);
+
+        // Clear polling when leaving page
+        window.addEventListener('beforeunload', () => clearInterval(pollInterval));
 
         function getLastMsgId() {
             const bubbles = messages.querySelectorAll('.chat-bubble');

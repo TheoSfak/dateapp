@@ -83,7 +83,9 @@ class AdminController extends Controller
         $userId = (int)($_POST['user_id'] ?? 0);
         $status = $_POST['status'] ?? '';
 
-        if ($userId > 0 && in_array($status, ['active','suspended','banned'])) {
+        if ($userId <= 0 || !in_array($status, ['active','suspended','banned'])) {
+            Session::flash('error', 'Invalid user or status.');
+        } else {
             \App\Core\Database::getInstance()->query(
                 "UPDATE users SET status = ? WHERE id = ?",
                 [$status, $userId]

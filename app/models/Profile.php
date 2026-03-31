@@ -162,17 +162,18 @@ class Profile extends Model
         if (!empty($profile['height_cm']))         $score += 5;
         if (!empty($profile['smoking']) || !empty($profile['drinking'])) $score += 5;
 
-        // Photo count
-        $photoCount = (int)static::db()->query(
-            "SELECT COUNT(*) FROM photos WHERE user_id = ?", [$userId]
-        )->fetchColumn();
+        // Photo + interest counts in a single query
+        $counts = static::db()->query(
+            "SELECT
+                (SELECT COUNT(*) FROM photos WHERE user_id = ?) AS photo_count,
+                (SELECT COUNT(*) FROM user_interests WHERE user_id = ?) AS interest_count",
+            [$userId, $userId]
+        )->fetch();
+        $photoCount    = (int)$counts['photo_count'];
+        $interestCount = (int)$counts['interest_count'];
+
         if ($photoCount >= 1) $score += 20;
         if ($photoCount >= 3) $score += 10;
-
-        // Interest count
-        $interestCount = (int)static::db()->query(
-            "SELECT COUNT(*) FROM user_interests WHERE user_id = ?", [$userId]
-        )->fetchColumn();
         if ($interestCount >= 3) $score += 5;
 
         $score = min(100, $score);

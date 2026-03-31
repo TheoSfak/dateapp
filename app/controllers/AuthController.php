@@ -30,8 +30,8 @@ class AuthController extends Controller
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Please enter a valid email address.';
         }
-        if (strlen($password) < 8) {
-            $errors[] = 'Password must be at least 8 characters.';
+        if (strlen($password) < 8 || strlen($password) > 128) {
+            $errors[] = 'Password must be 8–128 characters.';
         }
         if ($password !== $confirm) {
             $errors[] = 'Passwords do not match.';

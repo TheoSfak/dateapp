@@ -38,7 +38,7 @@ abstract class Controller
         }
 
         return [
-            'id'    => Session::get('user_id'),
+            'id'    => (int)Session::get('user_id'),
             'email' => Session::get('user_email'),
         ];
     }

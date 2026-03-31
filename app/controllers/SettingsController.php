@@ -28,13 +28,14 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
         if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
             echo json_encode(['error' => 'Invalid CSRF']);
             return;
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
         $targetId = (int)($input['blocked_id'] ?? $input['user_id'] ?? 0);
         if ($targetId > 0 && $targetId !== $user['id']) {
             Block::block($user['id'], $targetId);
@@ -61,13 +62,14 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
         if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
             echo json_encode(['error' => 'Invalid CSRF']);
             return;
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
         $targetId = (int)($input['reported_id'] ?? $input['user_id'] ?? 0);
         $reason   = trim($input['reason'] ?? '');
 
@@ -108,8 +110,8 @@ class SettingsController extends Controller
         $new     = $_POST['new_password'] ?? '';
         $confirm = $_POST['confirm_password'] ?? '';
 
-        if ($new === '' || strlen($new) < 8) {
-            Session::flash('error', 'New password must be at least 8 characters.');
+        if ($new === '' || strlen($new) < 8 || strlen($new) > 128) {
+            Session::flash('error', 'New password must be 8–128 characters.');
             $this->redirect('/settings');
             return;
         }

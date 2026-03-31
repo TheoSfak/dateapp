@@ -7,6 +7,13 @@ class Discovery extends Model
 {
     protected static string $table = 'profiles';
 
+    private static function haversine(string $latParam, string $lngParam): string
+    {
+        return "(6371 * acos(LEAST(1, cos(radians({$latParam})) * cos(radians(p.latitude))
+                 * cos(radians(p.longitude) - radians({$lngParam}))
+                 + sin(radians({$latParam})) * sin(radians(p.latitude)))))";
+    }
+
     /**
      * Get discovery stack with weighted compatibility scoring.
      *
@@ -44,10 +51,8 @@ class Discovery extends Model
 
         // ── Distance score (17 pts) ────────────────────────
         if ($hasLocation) {
-            $distanceExpr = "(6371 * acos(LEAST(1, cos(radians(?)) * cos(radians(p.latitude))
-                             * cos(radians(p.longitude) - radians(?))
-                             + sin(radians(?)) * sin(radians(p.latitude)))))";
-            $distScoreExpr = "ROUND(17 * GREATEST(0, 1 - {$distanceExpr} / ?), 2)";
+            $haversine = self::haversine('?', '?');
+            $distScoreExpr = "ROUND(17 * GREATEST(0, 1 - {$haversine} / ?), 2)";
             $params = array_merge($params, [$lat, $lng, $lat, $maxDist]);
         } else {
             $distScoreExpr = "8.5"; // neutral if no location
@@ -104,9 +109,7 @@ class Discovery extends Model
 
         // ── Distance raw for display ───────────────────────
         if ($hasLocation) {
-            $distRawExpr = "(6371 * acos(LEAST(1, cos(radians(?)) * cos(radians(p.latitude))
-                            * cos(radians(p.longitude) - radians(?))
-                            + sin(radians(?)) * sin(radians(p.latitude)))))";
+            $distRawExpr = self::haversine('?', '?');
             $distRawParams = [$lat, $lng, $lat];
         } else {
             $distRawExpr = "NULL";
@@ -192,11 +195,9 @@ class Discovery extends Model
             $allParams[] = (int)$filters['max_age'];
         }
 
-        // ── Distance filter ────────────────────────────────
+        // ── Distance filter (reuse haversine helper) ──────
         if (!empty($filters['max_distance']) && $hasLocation) {
-            $sql .= " AND (6371 * acos(LEAST(1, cos(radians(?)) * cos(radians(p.latitude))
-                          * cos(radians(p.longitude) - radians(?))
-                          + sin(radians(?)) * sin(radians(p.latitude))))) <= ?";
+            $sql .= " AND " . self::haversine('?', '?') . " <= ?";
             $allParams[] = $lat;
             $allParams[] = $lng;
             $allParams[] = $lat;
@@ -216,6 +217,13 @@ class Discovery extends Model
         // ── Order by total score ───────────────────────────
         $sql .= " ORDER BY total_score DESC, RAND() LIMIT ?";
         $allParams[] = $limit;
+
+        assert(
+            substr_count($sql, '?') === count($allParams),
+            'Discovery::getStack param count mismatch: '
+            . substr_count($sql, '?') . ' placeholders vs '
+            . count($allParams) . ' params'
+        );
 
         $stmt = static::db()->query($sql, $allParams);
         return $stmt->fetchAll();

@@ -118,6 +118,10 @@ class DiscoverController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            echo json_encode(['error' => 'Invalid request']);
+            return;
+        }
         $targetId = (int)($input['target_id'] ?? 0);
         $rawType  = $input['type'] ?? '';
 

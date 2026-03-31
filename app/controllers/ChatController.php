@@ -63,7 +63,7 @@ class ChatController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
         $stored = Session::get('_csrf_token', '');
         if (!hash_equals($stored, $token)) {
             echo json_encode(['error' => 'Invalid CSRF token']);
@@ -71,6 +71,7 @@ class ChatController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
         $matchId = (int)($input['match_id'] ?? 0);
         $text    = trim($input['body'] ?? '');
 
@@ -135,7 +136,7 @@ class ChatController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
         $stored = Session::get('_csrf_token', '');
         if (!hash_equals($stored, $token)) {
             echo json_encode(['error' => 'Invalid CSRF token']);
@@ -143,6 +144,7 @@ class ChatController extends Controller
         }
 
         $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
         $matchId = (int)($input['match_id'] ?? 0);
 
         MatchModel::unmatch($matchId, $user['id']);

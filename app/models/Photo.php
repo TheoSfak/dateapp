@@ -90,8 +90,8 @@ class Photo extends Model
         if (!$photo || $photo['user_id'] !== $userId) return false;
 
         $filePath = BASE_PATH . '/public/' . $photo['file_path'];
-        if (file_exists($filePath)) {
-            unlink($filePath);
+        if (file_exists($filePath) && !unlink($filePath)) {
+            error_log("Failed to delete photo file: {$filePath}");
         }
 
         static::db()->query("DELETE FROM photos WHERE id = ? AND user_id = ?", [$photoId, $userId]);
