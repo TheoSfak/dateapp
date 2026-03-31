@@ -25,10 +25,9 @@
 
     <!-- Card Stack -->
     <div class="swipe-stack" id="swipeStack">
-        <?php foreach (array_reverse($stack) as $i => $person): ?>
-        <div class="swipe-card <?= $i === count($stack) - 1 ? 'swipe-card-active' : '' ?>"
-             data-user-id="<?= (int)$person['user_id'] ?>"
-             style="z-index: <?= $i + 1 ?>">
+        <?php foreach ($stack as $i => $person): ?>
+        <div class="swipe-card"
+             data-user-id="<?= (int)$person['user_id'] ?>">
             <div class="swipe-card-image">
                 <?php if (!empty($person['primary_photo'])): ?>
                     <img src="/dateapp/public/<?= htmlspecialchars($person['primary_photo'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($person['name'], ENT_QUOTES, 'UTF-8') ?>" draggable="false">
