@@ -23,6 +23,32 @@
         <?php endif; ?>
     </div>
 
+    <!-- Beeline Teaser -->
+    <?php if ($likerCount > 0): ?>
+    <a href="/dateapp/liked-me" class="beeline-teaser <?= $isPremium ? '' : 'beeline-teaser--locked' ?>">
+        <span class="beeline-count"><?= (int)$likerCount ?></span>
+        <span class="beeline-text"><?= $likerCount === 1 ? 'person' : 'people' ?> liked you</span>
+        <?php if (!$isPremium): ?><span class="beeline-cta">Unlock ⚡</span><?php else: ?><span class="beeline-cta">See Them →</span><?php endif; ?>
+    </a>
+    <?php endif; ?>
+
+    <!-- Boost Bar -->
+    <?php if ($isPremium): ?>
+    <div class="boost-bar" id="boostBar">
+        <?php if ($boostActive): ?>
+            <div class="boost-active">
+                <span class="boost-icon">🚀</span>
+                <span class="boost-text">Boost Active</span>
+                <span class="boost-timer" id="boostTimer" data-remaining="<?= $boostRemaining ?>"></span>
+            </div>
+        <?php else: ?>
+            <button class="boost-btn" id="boostBtn">
+                <span class="boost-icon">🚀</span> Boost My Profile
+            </button>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Card Stack -->
     <div class="swipe-stack" id="swipeStack">
         <?php foreach ($stack as $i => $person): ?>
@@ -82,6 +108,10 @@
     <div class="swipe-actions">
         <button class="swipe-btn swipe-btn-nope" id="btnNope" title="Dislike">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <button class="swipe-btn swipe-btn-rewind <?= $isPremium ? '' : 'swipe-btn--locked' ?>" id="btnRewind" title="<?= $isPremium ? 'Undo Last Swipe' : 'Premium: Undo Last Swipe' ?>">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            <?php if (!$isPremium): ?><span class="swipe-btn-lock">⚡</span><?php endif; ?>
         </button>
         <button class="swipe-btn swipe-btn-super" id="btnSuper" title="Super Like">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>

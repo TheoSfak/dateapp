@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `messages` (
     `sender_id`    INT UNSIGNED NOT NULL,
     `message_text` TEXT         NOT NULL,
     `is_read`      TINYINT(1)  NOT NULL DEFAULT 0,
+    `read_at`      DATETIME    NULL DEFAULT NULL,
     `sent_at`      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT `fk_messages_match`  FOREIGN KEY (`match_id`)  REFERENCES `matches`(`id`) ON DELETE CASCADE,
@@ -227,6 +228,20 @@ CREATE TABLE IF NOT EXISTS `availability_slots` (
     `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_as_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     INDEX `idx_as_user` (`user_id`)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- PROFILE_BOOSTS – consumable visibility multiplier
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `profile_boosts` (
+    `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `user_id`     INT UNSIGNED NOT NULL,
+    `started_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `expires_at`  DATETIME NOT NULL,
+    `multiplier`  DECIMAL(3,1) NOT NULL DEFAULT 3.0,
+    CONSTRAINT `fk_pb_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_pb_user` (`user_id`),
+    INDEX `idx_pb_expires` (`expires_at`)
 ) ENGINE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -112,7 +112,18 @@
         <?php endif; ?>
             <div class="chat-bubble <?= (int)$msg['sender_id'] === (int)$userId ? 'chat-bubble-mine' : 'chat-bubble-theirs' ?>">
                 <p><?= nl2br(htmlspecialchars($msg['message_text'], ENT_QUOTES, 'UTF-8')) ?></p>
-                <span class="chat-time"><?= date('g:i A', strtotime($msg['sent_at'])) ?></span>
+                <span class="chat-time">
+                    <?= date('g:i A', strtotime($msg['sent_at'])) ?>
+                    <?php if ((int)$msg['sender_id'] === (int)$userId): ?>
+                        <?php if (!empty($isPremium) && !empty($msg['read_at'])): ?>
+                            <span class="chat-receipt chat-receipt--read" title="Read <?= htmlspecialchars(date('M j, g:i A', strtotime($msg['read_at'])), ENT_QUOTES, 'UTF-8') ?>">✓✓</span>
+                        <?php elseif (!empty($msg['is_read'])): ?>
+                            <span class="chat-receipt chat-receipt--delivered">✓✓</span>
+                        <?php else: ?>
+                            <span class="chat-receipt chat-receipt--sent">✓</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </span>
             </div>
         <?php endforeach; ?>
     </div>

@@ -59,6 +59,9 @@
         initDateIdeas();
         // ─── Availability Calendar ─────────────────────
         initAvailability();
+        // ─── Premium Features ──────────────────────────
+        initRewind();
+        initBoost();
     });
 
     // ═══════════════════════════════════════════════════════
@@ -924,6 +927,119 @@
                     }
                 });
         });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // REWIND (UNDO LAST SWIPE)
+    // ═══════════════════════════════════════════════════════
+    function initRewind() {
+        const btn = document.querySelector('.swipe-btn-rewind');
+        if (!btn) return;
+
+        btn.addEventListener('click', () => {
+            if (btn.classList.contains('swipe-btn--locked')) {
+                window.location.href = BASE + '/premium';
+                return;
+            }
+            btn.disabled = true;
+            ajax('POST', '/rewind', {})
+                .then(data => {
+                    btn.disabled = false;
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    if (data.success && data.profile) {
+                        const stack = document.querySelector('.swipe-stack');
+                        if (!stack) return;
+                        // Remove empty state if present
+                        const empty = stack.querySelector('.empty-state');
+                        if (empty) empty.remove();
+
+                        const p = data.profile;
+                        const photoHtml = p.photo
+                            ? `<img src="${BASE}/public/${p.photo}" alt="${p.name}" class="swipe-card-photo">`
+                            : `<div class="swipe-card-photo swipe-card-photo-placeholder">${(p.name || '?')[0].toUpperCase()}</div>`;
+                        const card = document.createElement('div');
+                        card.className = 'swipe-card';
+                        card.dataset.userId = p.id;
+                        card.innerHTML =
+                            `<div class="swipe-stamp swipe-stamp-like">LIKE</div>` +
+                            `<div class="swipe-stamp swipe-stamp-nope">NOPE</div>` +
+                            photoHtml +
+                            `<div class="swipe-card-info"><h3>${p.name}${p.age ? ', ' + p.age : ''}</h3>` +
+                            (p.city ? `<p class="swipe-card-city">📍 ${p.city}</p>` : '') +
+                            `</div>`;
+                        stack.insertBefore(card, stack.firstChild);
+                    }
+                })
+                .catch(() => { btn.disabled = false; });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PROFILE BOOST
+    // ═══════════════════════════════════════════════════════
+    function initBoost() {
+        // ─── Discover page boost ───────────────────────
+        const boostBtn = document.getElementById('boostBtn');
+        if (boostBtn) {
+            boostBtn.addEventListener('click', () => activateBoost(boostBtn));
+        }
+        // ─── Dashboard boost button ────────────────────
+        const dashBoostBtn = document.getElementById('dashBoostBtn');
+        if (dashBoostBtn) {
+            dashBoostBtn.addEventListener('click', () => activateBoost(dashBoostBtn));
+        }
+        // ─── Start countdown if timer already on page ──
+        const timer = document.getElementById('boostTimer');
+        if (timer) {
+            const remaining = parseInt(timer.dataset.remaining, 10);
+            if (remaining > 0) startBoostCountdown(timer, remaining);
+        }
+    }
+
+    function activateBoost(btn) {
+        btn.disabled = true;
+        ajax('POST', '/boost', {})
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    btn.disabled = false;
+                    return;
+                }
+                if (data.success) {
+                    // Replace button with active timer
+                    const bar = btn.closest('.boost-bar') || btn.closest('.dash-action-card');
+                    if (bar && bar.classList.contains('boost-bar')) {
+                        bar.innerHTML =
+                            '<span class="boost-icon">🚀</span>' +
+                            '<span class="boost-text boost-active">Boost active! <span class="boost-timer" id="boostTimer"></span> remaining</span>';
+                        const timer = document.getElementById('boostTimer');
+                        startBoostCountdown(timer, data.remaining);
+                    } else {
+                        alert('Boost activated for 30 minutes!');
+                    }
+                }
+            })
+            .catch(() => { btn.disabled = false; });
+    }
+
+    function startBoostCountdown(el, seconds) {
+        let remaining = seconds;
+        function tick() {
+            if (remaining <= 0) {
+                el.textContent = '0:00';
+                location.reload();
+                return;
+            }
+            const m = Math.floor(remaining / 60);
+            const s = remaining % 60;
+            el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            remaining--;
+            setTimeout(tick, 1000);
+        }
+        tick();
     }
 
 })();

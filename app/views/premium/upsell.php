@@ -17,6 +17,21 @@
             <p>No daily limits. Swipe as much as you want, all day long.</p>
         </div>
         <div class="premium-feature">
+            <div class="pf-icon">↩️</div>
+            <h4>Rewind Last Swipe</h4>
+            <p>Accidentally swiped left? Undo your last swipe and get a second chance.</p>
+        </div>
+        <div class="premium-feature">
+            <div class="pf-icon">🚀</div>
+            <h4>Profile Boosts</h4>
+            <p>Activate a 30-minute boost to get 3x more visibility in the swipe stack.</p>
+        </div>
+        <div class="premium-feature">
+            <div class="pf-icon">✓✓</div>
+            <h4>Read Receipts</h4>
+            <p>Know exactly when your messages are read with timestamps.</p>
+        </div>
+        <div class="premium-feature">
             <div class="pf-icon">🔝</div>
             <h4>Priority in Discovery</h4>
             <p>Your profile gets boosted to the top of the stack for more visibility.</p>

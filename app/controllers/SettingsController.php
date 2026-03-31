@@ -91,14 +91,13 @@ class SettingsController extends Controller
     {
         $user = $this->requireAuth();
         $dbUser = \App\Models\User::findById($user['id']);
-
-        if (!$dbUser['is_premium']) {
-            View::render('premium/upsell', ['feature' => 'See Who Liked You']);
-            return;
-        }
+        $isPremium = (bool)($dbUser['is_premium'] ?? false);
 
         $likers = Interaction::getLikers($user['id']);
-        View::render('discover/liked_me', ['likers' => $likers]);
+        View::render('discover/liked_me', [
+            'likers'    => $likers,
+            'isPremium' => $isPremium,
+        ]);
     }
 
     /**

@@ -2178,6 +2178,166 @@ select { cursor: pointer; }
 /* Dashboard action icon variants */
 .dash-action-icon--green { background: linear-gradient(135deg, #d4edda, #b7e1c3); color: #155724; }
 .dash-action-icon--orange { background: linear-gradient(135deg, #ffe5cc, #ffd1a3); color: #7c4700; }
+.dash-action-icon--rocket { background: linear-gradient(135deg, #ffe0f0, #ffc3e0); color: #d63384; }
+
+/* ─── Premium Features: Beeline Teaser ──────────────────── */
+.beeline-teaser {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    margin: .75rem 0;
+    background: linear-gradient(135deg, #fff5fb, #ffeef6);
+    border: 1px solid #f8d7e9;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #333;
+    transition: box-shadow .2s;
+}
+.beeline-teaser:hover { box-shadow: 0 2px 12px rgba(214, 51, 132, .15); }
+.beeline-teaser--locked { opacity: .88; }
+.beeline-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e91e63, #d63384);
+    color: #fff;
+    font-weight: 700;
+    font-size: .95rem;
+    flex-shrink: 0;
+}
+.beeline-text { flex: 1; font-size: .9rem; }
+.beeline-cta {
+    padding: .35rem .8rem;
+    font-size: .8rem;
+    font-weight: 600;
+    color: #d63384;
+    border: 1.5px solid #d63384;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+.beeline-teaser:not(.beeline-teaser--locked) .beeline-cta { background: #d63384; color: #fff; }
+
+/* ─── Premium Features: Profile Boost ───────────────────── */
+.boost-bar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem 1rem;
+    margin-bottom: .75rem;
+    background: linear-gradient(135deg, #f0e6ff, #e8d5ff);
+    border: 1px solid #d5b3ff;
+    border-radius: 12px;
+    font-size: .9rem;
+}
+.boost-icon { font-size: 1.2rem; }
+.boost-text { flex: 1; }
+.boost-timer {
+    font-weight: 700;
+    color: #7c3aed;
+    font-variant-numeric: tabular-nums;
+}
+.boost-btn {
+    padding: .4rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    font-weight: 600;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .2s;
+}
+.boost-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(124, 58, 237, .3);
+}
+.boost-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.boost-active { color: #5b21b6; }
+
+/* ─── Premium Features: Rewind Button ───────────────────── */
+.swipe-btn-rewind {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #f59e0b;
+    background: #fff;
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform .15s, box-shadow .2s;
+}
+.swipe-btn-rewind:hover:not(.swipe-btn--locked) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, .3);
+}
+.swipe-btn--locked { opacity: .55; cursor: not-allowed; border-color: #ccc; color: #aaa; }
+.swipe-btn-lock {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: .65rem;
+    background: #7c3aed;
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ─── Premium Features: Beeline Grid (Liked Me page) ──── */
+.beeline-upsell-banner {
+    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #fff5fb, #ffeef6);
+    border: 1px solid #f8d7e9;
+    border-radius: 14px;
+}
+.beeline-upsell-icon { font-size: 2rem; margin-bottom: .5rem; }
+.beeline-upsell-banner h3 { font-size: 1.1rem; margin-bottom: .4rem; }
+.beeline-upsell-banner p { font-size: .88rem; color: #666; margin-bottom: .8rem; }
+.likers-grid--blurred {
+    filter: blur(12px);
+    pointer-events: none;
+    user-select: none;
+    position: relative;
+}
+.beeline-blur-overlay {
+    text-align: center;
+    margin-top: -2rem;
+    padding: 1rem;
+    font-weight: 600;
+    color: #888;
+    font-size: .9rem;
+}
+
+/* ─── Premium Features: Read Receipts ───────────────────── */
+.chat-receipt {
+    font-size: .72rem;
+    margin-left: 4px;
+    letter-spacing: -1px;
+}
+.chat-receipt--sent { color: #aaa; }
+.chat-receipt--delivered { color: #aaa; }
+.chat-receipt--read { color: #3b82f6; }
+
+/* ─── Dashboard Boost Action ────────────────────────────── */
+.dash-boost-action {
+    border: none;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    font-size: inherit;
+}
 
 /* ─── Mini-Games ────────────────────────────────────────── */
 .game-page {

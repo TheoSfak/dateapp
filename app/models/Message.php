@@ -38,12 +38,12 @@ class Message extends Model
     }
 
     /**
-     * Mark messages as read.
+     * Mark messages as read (sets both is_read flag and read_at timestamp).
      */
     public static function markRead(int $matchId, int $readerId): void
     {
         static::db()->query(
-            "UPDATE messages SET is_read = 1 WHERE match_id = ? AND sender_id != ? AND is_read = 0",
+            "UPDATE messages SET is_read = 1, read_at = NOW() WHERE match_id = ? AND sender_id != ? AND is_read = 0",
             [$matchId, $readerId]
         );
     }

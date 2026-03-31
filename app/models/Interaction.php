@@ -154,4 +154,54 @@ class Interaction extends Model
         );
         return $stmt->fetchAll();
     }
+
+    /**
+     * Get the count of users who liked this user (not yet swiped back).
+     */
+    public static function getLikerCount(int $userId): int
+    {
+        $stmt = static::db()->query(
+            "SELECT COUNT(*) as cnt FROM interactions i
+             WHERE i.target_id = ? AND i.action_type IN ('like','superlike')
+             AND NOT EXISTS (SELECT 1 FROM interactions i2 WHERE i2.actor_id = ? AND i2.target_id = i.actor_id)",
+            [$userId, $userId]
+        );
+        return (int)$stmt->fetch()['cnt'];
+    }
+
+    /**
+     * Undo (rewind) the last swipe. Premium only.
+     * Returns the target user ID that was undone, or null if nothing to undo.
+     */
+    public static function undoLast(int $userId): ?int
+    {
+        // Get the most recent interaction from today
+        $stmt = static::db()->query(
+            "SELECT id, target_id FROM interactions
+             WHERE actor_id = ? AND DATE(created_at) = CURDATE()
+             ORDER BY created_at DESC LIMIT 1",
+            [$userId]
+        );
+        $row = $stmt->fetch();
+        if (!$row) return null;
+
+        $targetId = (int)$row['target_id'];
+
+        // Delete the interaction
+        static::db()->query(
+            "DELETE FROM interactions WHERE id = ?",
+            [$row['id']]
+        );
+
+        // Also remove any match that was created from this
+        $u1 = min($userId, $targetId);
+        $u2 = max($userId, $targetId);
+        static::db()->query(
+            "DELETE FROM matches WHERE user_1_id = ? AND user_2_id = ?
+             AND NOT EXISTS (SELECT 1 FROM messages WHERE match_id = matches.id)",
+            [$u1, $u2]
+        );
+
+        return $targetId;
+    }
 }

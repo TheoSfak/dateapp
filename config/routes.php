@@ -41,6 +41,8 @@ return [
     // Discovery / Swiping
     'GET /discover'    => [DiscoverController::class, 'index'],
     'POST /swipe'      => [DiscoverController::class, 'swipe'],
+    'POST /rewind'     => [DiscoverController::class, 'rewind'],
+    'POST /boost'      => [DiscoverController::class, 'boost'],
 
     // Matches & Chat
     'GET /matches'        => [ChatController::class, 'matches'],

@@ -39,6 +39,8 @@ class HomeController extends Controller
         $photoCount = count($photos);
         $completeness = $this->calcCompleteness($profile, $photoCount);
 
+        $isPremium = !empty($profile['is_premium']);
+
         View::render('home/dashboard', [
             'email'          => Session::get('user_email'),
             'profile'        => $profile,
@@ -51,6 +53,7 @@ class HomeController extends Controller
             'photos'         => $photos,
             'photoCount'     => $photoCount,
             'completeness'   => $completeness,
+            'isPremium'      => $isPremium,
         ]);
     }
 

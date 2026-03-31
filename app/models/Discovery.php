@@ -214,8 +214,12 @@ class Discovery extends Model
         )";
         $allParams[] = $userId;
 
-        // ── Order by total score ───────────────────────────
-        $sql .= " ORDER BY total_score DESC, RAND() LIMIT ?";
+        // ── Boost multiplier for ordering ──────────────────
+        // Users with an active boost get their score multiplied
+        $sql .= " ORDER BY (total_score * IFNULL(
+            (SELECT b.multiplier FROM profile_boosts b WHERE b.user_id = u.id AND b.expires_at > NOW() ORDER BY b.expires_at DESC LIMIT 1),
+            1.0
+        )) DESC, RAND() LIMIT ?";
         $allParams[] = $limit;
 
         assert(

@@ -9,6 +9,7 @@ use App\Core\Config;
 use App\Models\Discovery;
 use App\Models\Interaction;
 use App\Models\Profile;
+use App\Models\Boost;
 
 class DiscoverController extends Controller
 {
@@ -46,14 +47,20 @@ class DiscoverController extends Controller
         $userProfile = Profile::getByUserId($user['id']);
         $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
         $dailyLimit = Config::get('app.free_daily_swipes', 50);
+        $likerCount = Interaction::getLikerCount($user['id']);
+        $boostActive = Boost::isActive($user['id']);
+        $boostRemaining = Boost::getRemainingSeconds($user['id']);
 
         View::render('discover/index', [
-            'stack'       => $stack,
-            'filters'     => $filters,
-            'swipesToday' => $swipesToday,
-            'dailyLimit'  => $dailyLimit,
-            'isPremium'   => $isPremium,
-            'hasProfile'  => !empty($userProfile['name']),
+            'stack'          => $stack,
+            'filters'        => $filters,
+            'swipesToday'    => $swipesToday,
+            'dailyLimit'     => $dailyLimit,
+            'isPremium'      => $isPremium,
+            'hasProfile'     => !empty($userProfile['name']),
+            'likerCount'     => $likerCount,
+            'boostActive'    => $boostActive,
+            'boostRemaining' => $boostRemaining,
         ]);
     }
 
@@ -160,5 +167,75 @@ class DiscoverController extends Controller
         }
 
         echo json_encode($response);
+    }
+
+    /**
+     * Rewind (undo) last swipe. Premium only (AJAX).
+     */
+    public function rewind(): void
+    {
+        $user = $this->requireAuth();
+        header('Content-Type: application/json');
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $stored = Session::get('_csrf_token', '');
+        if (!hash_equals($stored, $token)) {
+            echo json_encode(['error' => 'Invalid CSRF token']);
+            return;
+        }
+
+        $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
+        if (!$isPremium) {
+            echo json_encode(['error' => 'Premium required', 'premium_required' => true]);
+            return;
+        }
+
+        $targetId = Interaction::undoLast($user['id']);
+        if (!$targetId) {
+            echo json_encode(['error' => 'Nothing to undo']);
+            return;
+        }
+
+        // Return the undone profile so the card can be re-inserted
+        $profile = Profile::getFullProfile($targetId);
+        echo json_encode([
+            'success'   => true,
+            'target_id' => $targetId,
+            'name'      => $profile['name'] ?? 'Unknown',
+            'photo'     => $profile['primary_photo'] ?? null,
+            'age'       => $profile['date_of_birth'] ? (int)date_diff(date_create($profile['date_of_birth']), date_create())->y : null,
+            'city'      => $profile['city'] ?? '',
+        ]);
+    }
+
+    /**
+     * Activate a profile boost. Premium only (AJAX).
+     */
+    public function boost(): void
+    {
+        $user = $this->requireAuth();
+        header('Content-Type: application/json');
+
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $stored = Session::get('_csrf_token', '');
+        if (!hash_equals($stored, $token)) {
+            echo json_encode(['error' => 'Invalid CSRF token']);
+            return;
+        }
+
+        $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
+        if (!$isPremium) {
+            echo json_encode(['error' => 'Premium required', 'premium_required' => true]);
+            return;
+        }
+
+        if (Boost::isActive($user['id'])) {
+            $remaining = Boost::getRemainingSeconds($user['id']);
+            echo json_encode(['error' => 'Boost already active', 'remaining' => $remaining]);
+            return;
+        }
+
+        Boost::activate($user['id'], 30, 3.0);
+        echo json_encode(['success' => true, 'minutes' => 30, 'remaining' => 1800]);
     }
 }

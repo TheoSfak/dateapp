@@ -9,7 +9,16 @@
             <a href="/dateapp/discover" class="btn btn-primary">Discover People</a>
         </div>
     <?php else: ?>
-        <div class="likers-grid">
+        <?php if (empty($isPremium)): ?>
+        <!-- Free user: blurred beeline with upsell -->
+        <div class="beeline-upsell-banner">
+            <div class="beeline-upsell-icon">⭐</div>
+            <h3><?= count($likers) ?> <?= count($likers) === 1 ? 'person has' : 'people have' ?> liked you!</h3>
+            <p>Upgrade to Premium to see who they are and match instantly.</p>
+            <a href="/dateapp/liked-me" class="btn btn-accent btn-lg" onclick="alert('Payment integration coming soon!'); return false;">Unlock for $9.99/mo</a>
+        </div>
+        <?php endif; ?>
+        <div class="likers-grid <?= empty($isPremium) ? 'likers-grid--blurred' : '' ?>">
             <?php foreach ($likers as $liker): ?>
             <div class="liker-card">
                 <?php if (!empty($liker['photo'])): ?>
@@ -29,5 +38,10 @@
             </div>
             <?php endforeach; ?>
         </div>
+        <?php if (empty($isPremium)): ?>
+        <div class="beeline-blur-overlay">
+            <span>🔒 Upgrade to see your admirers</span>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </section>

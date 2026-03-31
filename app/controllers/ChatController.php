@@ -58,6 +58,8 @@ class ChatController extends Controller
         // Date ideas
         $dateIdeas = DateIdea::generate($user['id'], $otherId);
 
+        $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
+
         View::render('chat/conversation', [
             'match'         => $match,
             'otherUser'     => $otherProfile,
@@ -66,6 +68,7 @@ class ChatController extends Controller
             'ghostInfo'     => $ghostInfo,
             'availOverlap'  => $availOverlap,
             'dateIdeas'     => $dateIdeas,
+            'isPremium'     => $isPremium,
         ]);
     }
 
