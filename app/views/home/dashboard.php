@@ -109,7 +109,7 @@
         </div>
         <div class="dash-matches-scroll">
             <?php foreach ($recentMatches as $match): ?>
-            <a href="/dateapp/matches/chat/<?= (int)$match['match_id'] ?>" class="dash-match-card">
+            <a href="/dateapp/chat?match_id=<?= (int)$match['match_id'] ?>" class="dash-match-card">
                 <div class="dash-match-photo">
                     <?php if (!empty($match['photo'])): ?>
                         <img src="/dateapp/public/<?= htmlspecialchars($match['photo'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($match['name'], ENT_QUOTES, 'UTF-8') ?>">
