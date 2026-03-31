@@ -760,15 +760,18 @@
             btn.addEventListener('click', () => {
                 const idx = btn.dataset.index;
                 const matchId = passBtn.dataset.matchId;
-                const csrf = document.querySelector('[name="csrf_token"]')?.value;
-                const fd = new FormData();
-                fd.append('csrf_token', csrf);
-                fd.append('match_id', matchId);
-                fd.append('message_index', idx);
-                fetch('/dateapp/chat/polite-pass', { method: 'POST', body: fd })
+                fetch('/dateapp/chat/polite-pass', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ match_id: matchId, message_index: idx })
+                })
                     .then(r => r.json())
                     .then(data => {
-                        if (data.ok) {
+                        if (data.success) {
                             modal.style.display = 'none';
                             const nudge = document.getElementById('ghostNudge');
                             if (nudge) nudge.remove();
@@ -902,14 +905,18 @@
                 });
             });
 
-            const csrf = document.querySelector('[name="csrf_token"]')?.value;
-            const fd = new FormData();
-            fd.append('csrf_token', csrf);
-            fd.append('slots', JSON.stringify(slots));
-            fetch('/dateapp/settings/availability', { method: 'POST', body: fd })
+                fetch('/dateapp/settings/availability', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ slots: slots })
+            })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.ok) {
+                    if (data.success) {
                         saveBtn.textContent = '✓ Saved!';
                         setTimeout(() => { saveBtn.textContent = 'Save Availability'; }, 2000);
                     } else {
