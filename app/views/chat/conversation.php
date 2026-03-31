@@ -13,6 +13,9 @@
             </div>
             <a href="/dateapp/user?id=<?= (int)$otherUser['id'] ?>" class="chat-user-name"><?= htmlspecialchars($otherUser['name'] ?? 'Unknown', ENT_QUOTES, 'UTF-8') ?></a>
         </div>
+        <a href="/dateapp/game?match_id=<?= (int)$match['id'] ?>" class="chat-game-btn" title="Play a Game">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="17" cy="10" r="1"/><circle cx="15" cy="13" r="1"/></svg>
+        </a>
         <button class="chat-menu-btn" onclick="toggleChatMenu()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>

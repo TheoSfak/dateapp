@@ -11,6 +11,7 @@ use App\Controllers\DiscoverController;
 use App\Controllers\ChatController;
 use App\Controllers\SettingsController;
 use App\Controllers\AdminController;
+use App\Controllers\GameController;
 
 return [
     // Public pages
@@ -46,6 +47,13 @@ return [
     'POST /chat/send'     => [ChatController::class, 'send'],
     'GET /chat/poll'      => [ChatController::class, 'poll'],
     'POST /chat/unmatch'  => [ChatController::class, 'unmatch'],
+
+    // Mini-Games
+    'GET /game'           => [GameController::class, 'index'],
+    'POST /game/start'    => [GameController::class, 'start'],
+    'GET /game/play'      => [GameController::class, 'play'],
+    'POST /game/answer'   => [GameController::class, 'answer'],
+    'GET /game/poll'      => [GameController::class, 'poll'],
 
     // Settings & Safety
     'GET /settings'         => [SettingsController::class, 'index'],

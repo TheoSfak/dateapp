@@ -44,6 +44,9 @@
         initGeoDetect();
         // ─── Interest Tag Picker ───────────────────────────
         initInterestPicker();
+        // ─── Mini-Games ────────────────────────────────
+        initGamePicker();
+        initGamePlay();
         // ─── Filter Panel ──────────────────────────────
         const filterBtn = document.querySelector('.filter-toggle');
         const filterPanel = document.querySelector('.filter-panel');
@@ -382,6 +385,330 @@
                 }
             });
         });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MINI-GAMES — PICKER
+    // ═══════════════════════════════════════════════════════
+    function initGamePicker() {
+        const grid = document.querySelector('.game-picker-grid');
+        if (!grid) return;
+        const matchId = grid.dataset.matchId;
+
+        grid.querySelectorAll('.game-type-card').forEach(card => {
+            card.addEventListener('click', () => {
+                if (card.classList.contains('loading')) return;
+                card.classList.add('loading');
+                card.style.opacity = '0.6';
+
+                ajax('POST', '/game/start', {
+                    match_id: parseInt(matchId, 10),
+                    game_type: card.dataset.type
+                }).then(res => {
+                    if (res.game_id) {
+                        window.location.href = BASE + '/game/play?game_id=' + res.game_id;
+                    } else {
+                        card.classList.remove('loading');
+                        card.style.opacity = '';
+                        if (res.error && res.game_id) {
+                            window.location.href = BASE + '/game/play?game_id=' + res.game_id;
+                        }
+                    }
+                }).catch(() => {
+                    card.classList.remove('loading');
+                    card.style.opacity = '';
+                });
+            });
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MINI-GAMES — PLAY ENGINE
+    // ═══════════════════════════════════════════════════════
+    function initGamePlay() {
+        const el = document.querySelector('.game-play');
+        if (!el || !window._gameData) return;
+
+        const gameId     = parseInt(el.dataset.gameId, 10);
+        const userId     = parseInt(el.dataset.userId, 10);
+        const otherId    = parseInt(el.dataset.otherId, 10);
+        const type       = el.dataset.type;
+        const totalRounds = parseInt(el.dataset.totalRounds, 10);
+        const status     = el.dataset.status;
+
+        const questions  = window._gameData.questions;
+        const answersMap = window._gameData.answers;   // {round: {userId: answer}}
+        const otherName  = window._gameData.otherName;
+
+        const arena   = document.getElementById('gameArena');
+        const waiting = document.getElementById('gameWaiting');
+        const progBar = document.getElementById('progressBar');
+        const roundInd = document.getElementById('roundIndicator');
+
+        let currentRound = parseInt(el.dataset.currentRound, 10);
+        let hasAnswered  = el.dataset.hasAnswered === '1';
+        let pollTimer    = null;
+
+        // ── If game is finished, show results ──
+        if (status === 'finished') {
+            showResults();
+            return;
+        }
+
+        // ── If already answered this round, resume waiting ──
+        if (hasAnswered) {
+            renderQuestionLocked();
+            startPolling();
+            return;
+        }
+
+        // ── Render current question ──
+        renderQuestion();
+
+        function updateProgress(round) {
+            const pct = ((round - 1) / totalRounds) * 100;
+            progBar.style.width = pct + '%';
+            roundInd.textContent = round;
+        }
+
+        function renderQuestion() {
+            updateProgress(currentRound);
+            const q = questions[currentRound - 1];
+            if (!q) { showResults(); return; }
+
+            if (type === 'trivia') {
+                renderTrivia(q);
+            } else {
+                renderChoice(q);
+            }
+        }
+
+        function renderChoice(q) {
+            const isWYR = type === 'would_you_rather';
+            const prefix = isWYR ? 'Would you rather...' : 'Which do you prefer?';
+            arena.innerHTML =
+                '<div class="game-question">' + escapeHtml(prefix) + '</div>' +
+                '<div class="game-choices">' +
+                    '<button class="game-choice-btn" data-answer="A">' +
+                        '<span class="choice-label">A</span>' +
+                        '<span>' + escapeHtml(q.A) + '</span>' +
+                    '</button>' +
+                    '<button class="game-choice-btn" data-answer="B">' +
+                        '<span class="choice-label">B</span>' +
+                        '<span>' + escapeHtml(q.B) + '</span>' +
+                    '</button>' +
+                '</div>';
+
+            arena.querySelectorAll('.game-choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => submitAnswer(btn.dataset.answer));
+            });
+            waiting.style.display = 'none';
+        }
+
+        function renderTrivia(q) {
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += '<button class="game-trivia-btn" data-answer="' + escapeHtml(opt) + '">' + escapeHtml(opt) + '</button>';
+            });
+            arena.innerHTML =
+                '<div class="game-question">' + escapeHtml(q.q) + '</div>' +
+                '<div class="game-trivia-options">' + optionsHtml + '</div>';
+
+            arena.querySelectorAll('.game-trivia-btn').forEach(btn => {
+                btn.addEventListener('click', () => submitAnswer(btn.dataset.answer));
+            });
+            waiting.style.display = 'none';
+        }
+
+        function renderQuestionLocked() {
+            const q = questions[currentRound - 1];
+            if (!q) return;
+            updateProgress(currentRound);
+
+            if (type === 'trivia') {
+                renderTrivia(q);
+            } else {
+                renderChoice(q);
+            }
+
+            // Disable buttons and show selected
+            arena.querySelectorAll('.game-choice-btn, .game-trivia-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.6';
+            });
+            waiting.style.display = '';
+        }
+
+        function submitAnswer(answer) {
+            // Disable all buttons immediately
+            arena.querySelectorAll('.game-choice-btn, .game-trivia-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+            });
+
+            // Highlight selected
+            arena.querySelectorAll('[data-answer="' + CSS.escape(answer) + '"]').forEach(btn => {
+                btn.classList.add('selected');
+            });
+
+            hasAnswered = true;
+            waiting.style.display = '';
+
+            ajax('POST', '/game/answer', {
+                game_id: gameId,
+                round: currentRound,
+                answer: answer
+            }).then(res => {
+                if (res.reveal) {
+                    stopPolling();
+                    showReveal(res.reveal, res.status === 'finished');
+                } else if (res.status === 'waiting') {
+                    startPolling();
+                }
+            });
+        }
+
+        function startPolling() {
+            stopPolling();
+            pollTimer = setInterval(() => {
+                fetch(BASE + '/game/poll?game_id=' + gameId + '&round=' + currentRound, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.both_answered && res.reveal) {
+                        stopPolling();
+                        showReveal(res.reveal, res.game_status === 'finished');
+                    }
+                });
+            }, 2000);
+        }
+
+        function stopPolling() {
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        }
+
+        function showReveal(reveal, isLast) {
+            waiting.style.display = 'none';
+            const q = questions[currentRound - 1];
+            const myAns = reveal[userId] || '?';
+            const theirAns = reveal[otherId] || '?';
+            const same = myAns === theirAns;
+
+            // Store for results
+            if (!answersMap[currentRound]) answersMap[currentRound] = {};
+            answersMap[currentRound][userId] = myAns;
+            answersMap[currentRound][otherId] = theirAns;
+
+            // For trivia, show correct/wrong on the current buttons
+            let triviaExtra = '';
+            if (type === 'trivia' && q) {
+                const correct = q.a;
+                const youRight = myAns === correct;
+                const theyRight = theirAns === correct;
+                triviaExtra =
+                    '<div style="font-size:0.82rem; color:var(--gray); margin-top:0.5rem;">' +
+                    'Correct: <strong>' + escapeHtml(correct) + '</strong></div>';
+            }
+
+            let matchIcon = same ? '🎉' : '😅';
+            let matchText = same ? 'You both said the same!' : 'Different picks!';
+            if (type === 'trivia') {
+                const myRight = myAns === q.a;
+                const theirRight = theirAns === q.a;
+                if (myRight && theirRight) { matchIcon = '🎉'; matchText = 'Both correct!'; }
+                else if (myRight) { matchIcon = '💪'; matchText = 'You got it right!'; }
+                else if (theirRight) { matchIcon = '😅'; matchText = otherName + ' got it right!'; }
+                else { matchIcon = '🤷'; matchText = 'Nobody got it!'; }
+            }
+
+            arena.innerHTML =
+                '<div class="game-reveal">' +
+                    '<div class="game-reveal-match">' + matchIcon + '</div>' +
+                    '<div class="game-reveal-text">' + matchText + '</div>' +
+                    '<div class="game-reveal-answers">' +
+                        '<div class="game-reveal-player">' +
+                            '<div class="name">You</div>' +
+                            '<div class="ans' + (same ? ' same' : '') + '">' + escapeHtml(myAns) + '</div>' +
+                        '</div>' +
+                        '<div class="game-reveal-player">' +
+                            '<div class="name">' + escapeHtml(otherName) + '</div>' +
+                            '<div class="ans' + (same ? ' same' : '') + '">' + escapeHtml(theirAns) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    triviaExtra +
+                    (isLast
+                        ? '<button class="game-next-btn" id="showResultsBtn">See Results</button>'
+                        : '<button class="game-next-btn" id="nextRoundBtn">Next Round →</button>') +
+                '</div>';
+
+            // Update progress
+            updateProgress(currentRound + (isLast ? 1 : 0));
+
+            if (isLast) {
+                progBar.style.width = '100%';
+                document.getElementById('showResultsBtn').addEventListener('click', showResults);
+            } else {
+                document.getElementById('nextRoundBtn').addEventListener('click', () => {
+                    currentRound++;
+                    hasAnswered = false;
+                    renderQuestion();
+                });
+            }
+        }
+
+        function showResults() {
+            stopPolling();
+            waiting.style.display = 'none';
+            progBar.style.width = '100%';
+            roundInd.textContent = totalRounds;
+
+            let sameCount = 0;
+            let roundsHtml = '';
+
+            for (let r = 1; r <= totalRounds; r++) {
+                const q = questions[r - 1];
+                const rData = answersMap[r] || answersMap[String(r)] || {};
+                const myAns = rData[userId] || rData[String(userId)] || '—';
+                const theirAns = rData[otherId] || rData[String(otherId)] || '—';
+
+                let isSame;
+                if (type === 'trivia') {
+                    isSame = q && myAns === q.a && theirAns === q.a;
+                } else {
+                    isSame = myAns === theirAns;
+                }
+                if (isSame) sameCount++;
+
+                roundsHtml +=
+                    '<div class="game-results-round">' +
+                        '<span>Round ' + r + '</span>' +
+                        '<span>' + escapeHtml(myAns) + ' / ' + escapeHtml(theirAns) + '</span>' +
+                        '<span class="game-results-badge ' + (isSame ? 'same' : 'diff') + '">' +
+                            (isSame ? (type === 'trivia' ? '✓ Both' : '✓ Match') : (type === 'trivia' ? '✗' : '✗ Diff')) +
+                        '</span>' +
+                    '</div>';
+            }
+
+            const pct = Math.round((sameCount / totalRounds) * 100);
+            const icon = pct >= 60 ? '🎉' : pct >= 40 ? '😊' : '🤷';
+            const label = type === 'trivia' ? 'Rounds Both Correct' : 'Compatibility';
+            const matchId = parseInt(el.dataset.matchId, 10);
+
+            arena.innerHTML =
+                '<div class="game-results">' +
+                    '<div class="game-results-icon">' + icon + '</div>' +
+                    '<h2>Game Over!</h2>' +
+                    '<div class="game-results-score">' + sameCount + ' / ' + totalRounds + '</div>' +
+                    '<div class="game-results-label">' + label + '</div>' +
+                    roundsHtml +
+                    '<div class="game-results-actions">' +
+                        '<a href="' + BASE + '/game?match_id=' + matchId + '" class="btn btn-primary">Play Again</a>' +
+                        '<a href="' + BASE + '/chat?match_id=' + matchId + '" class="btn btn-outline">Back to Chat</a>' +
+                    '</div>' +
+                '</div>';
+        }
     }
 
     // ═══════════════════════════════════════════════════════
