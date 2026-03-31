@@ -116,13 +116,7 @@ class DiscoverController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        // Validate CSRF via header for AJAX
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
-        $stored = Session::get('_csrf_token', '');
-        if (!hash_equals($stored, $token)) {
-            echo json_encode(['error' => 'Invalid CSRF token']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $input = json_decode(file_get_contents('php://input'), true);
         if (!is_array($input)) {
@@ -142,6 +136,13 @@ class DiscoverController extends Controller
         }
 
         if ($targetId <= 0 || $targetId === $user['id']) {
+            echo json_encode(['error' => 'Invalid target']);
+            return;
+        }
+
+        // Verify target user exists and is active
+        $targetUser = \App\Models\User::findById($targetId);
+        if (!$targetUser || $targetUser['status'] !== 'active') {
             echo json_encode(['error' => 'Invalid target']);
             return;
         }
@@ -177,12 +178,7 @@ class DiscoverController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        $stored = Session::get('_csrf_token', '');
-        if (!hash_equals($stored, $token)) {
-            echo json_encode(['error' => 'Invalid CSRF token']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
         if (!$isPremium) {
@@ -216,12 +212,7 @@ class DiscoverController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        $stored = Session::get('_csrf_token', '');
-        if (!hash_equals($stored, $token)) {
-            echo json_encode(['error' => 'Invalid CSRF token']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
         if (!$isPremium) {
@@ -235,7 +226,8 @@ class DiscoverController extends Controller
             return;
         }
 
-        Boost::activate($user['id'], 30, 3.0);
-        echo json_encode(['success' => true, 'minutes' => 30, 'remaining' => 1800]);
+        Boost::activate($user['id'], Config::get('app.boost_duration_minutes', 30), Config::get('app.boost_multiplier', 3.0));
+        $minutes = Config::get('app.boost_duration_minutes', 30);
+        echo json_encode(['success' => true, 'minutes' => $minutes, 'remaining' => $minutes * 60]);
     }
 }

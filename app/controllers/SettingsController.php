@@ -31,11 +31,7 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
-        if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
-            echo json_encode(['error' => 'Invalid CSRF']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $input = json_decode(file_get_contents('php://input'), true);
         if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
@@ -65,11 +61,7 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
-        if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
-            echo json_encode(['error' => 'Invalid CSRF']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $input = json_decode(file_get_contents('php://input'), true);
         if (!is_array($input)) { echo json_encode(['error' => 'Invalid request']); return; }
@@ -175,11 +167,7 @@ class SettingsController extends Controller
         $user = $this->requireAuth();
         header('Content-Type: application/json');
 
-        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!hash_equals(Session::get('_csrf_token', ''), $token)) {
-            echo json_encode(['error' => 'Invalid CSRF']);
-            return;
-        }
+        if (!$this->validateCSRFAjax()) return;
 
         $input = json_decode(file_get_contents('php://input'), true);
         if (!is_array($input) || !isset($input['slots'])) {

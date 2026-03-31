@@ -1,6 +1,4 @@
 <?php
-    $hour = (int)date('G');
-    $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
     $firstName = htmlspecialchars($profile['name'] ?? '', ENT_QUOTES, 'UTF-8');
     $swipesLeft = max(0, ($dailyLimit ?? 50) - ($swipesToday ?? 0));
 ?>

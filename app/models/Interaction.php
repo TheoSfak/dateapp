@@ -66,15 +66,19 @@ class Interaction extends Model
         $elo = (float)($row['elo_score'] ?? 1000);
         $expected = $elo / 2000; // normalized expectation
 
+        $kLike     = \App\Core\Config::get('app.elo_k_like', 16);
+        $kSuper    = \App\Core\Config::get('app.elo_k_superlike', 24);
+        $kDislike  = \App\Core\Config::get('app.elo_k_dislike', 8);
+
         switch ($action) {
             case 'like':
-                $delta = 16 * (1 - $expected);
+                $delta = $kLike * (1 - $expected);
                 break;
             case 'superlike':
-                $delta = 24 * (1 - $expected); // K*1.5
+                $delta = $kSuper * (1 - $expected);
                 break;
             case 'dislike':
-                $delta = 8 * (0 - $expected); // smaller penalty
+                $delta = $kDislike * (0 - $expected);
                 break;
             default:
                 return;

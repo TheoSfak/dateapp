@@ -232,16 +232,4 @@ class Discovery extends Model
         $stmt = static::db()->query($sql, $allParams);
         return $stmt->fetchAll();
     }
-
-    /**
-     * Get all photos for a user (for the swipe card detail view).
-     */
-    public static function getUserPhotos(int $userId): array
-    {
-        $stmt = static::db()->query(
-            "SELECT file_path FROM photos WHERE user_id = ? ORDER BY is_primary DESC, uploaded_at ASC",
-            [$userId]
-        );
-        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
-    }
 }

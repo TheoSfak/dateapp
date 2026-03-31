@@ -81,19 +81,6 @@ class Message extends Model
     }
 
     /**
-     * Get the last message in a match by a specific sender.
-     */
-    public static function getLastBySender(int $matchId, int $senderId): ?array
-    {
-        $stmt = static::db()->query(
-            "SELECT * FROM messages WHERE match_id = ? AND sender_id = ? ORDER BY sent_at DESC LIMIT 1",
-            [$matchId, $senderId]
-        );
-        $row = $stmt->fetch();
-        return $row ?: null;
-    }
-
-    /**
      * Get the very last message in a match (any sender).
      */
     public static function getLastInMatch(int $matchId): ?array
@@ -134,13 +121,14 @@ class Message extends Model
 
         $hoursSinceLastMsg = (time() - strtotime($lastOverall['sent_at'])) / 3600;
         $isOurTurn = $lastOverall['sender_id'] !== $currentUserId;
+        $ghostHours = \App\Core\Config::get('app.ghost_nudge_hours', 72);
 
         return [
             'hours_since_last' => round($hoursSinceLastMsg, 1),
             'is_our_turn' => $isOurTurn,
             'last_sender_id' => (int)$lastOverall['sender_id'],
-            'needs_nudge' => $isOurTurn && $hoursSinceLastMsg >= 72,
-            'partner_waiting' => !$isOurTurn && $hoursSinceLastMsg >= 72,
+            'needs_nudge' => $isOurTurn && $hoursSinceLastMsg >= $ghostHours,
+            'partner_waiting' => !$isOurTurn && $hoursSinceLastMsg >= $ghostHours,
         ];
     }
 }

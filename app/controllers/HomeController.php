@@ -41,6 +41,10 @@ class HomeController extends Controller
 
         $isPremium = !empty($profile['is_premium']);
 
+        // Greeting based on time of day
+        $hour = (int)date('G');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+
         View::render('home/dashboard', [
             'email'          => Session::get('user_email'),
             'profile'        => $profile,
@@ -54,6 +58,7 @@ class HomeController extends Controller
             'photoCount'     => $photoCount,
             'completeness'   => $completeness,
             'isPremium'      => $isPremium,
+            'greeting'       => $greeting,
         ]);
     }
 

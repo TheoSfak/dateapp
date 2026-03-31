@@ -44,6 +44,21 @@ abstract class Controller
     }
 
     /**
+     * Validate CSRF token from AJAX request (header or POST body).
+     * Returns true if valid; on failure, sends JSON error and returns false.
+     */
+    protected function validateCSRFAjax(): bool
+    {
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf_token'] ?? '';
+        $stored = Session::get('_csrf_token', '');
+        if ($stored === '' || $token === '' || !hash_equals($stored, $token)) {
+            echo json_encode(['error' => 'Invalid CSRF token']);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Require the user to be a guest (not logged in).
      */
     protected function requireGuest(): void

@@ -41,21 +41,26 @@ class ProfileController extends Controller
         $profile = Profile::getByUserId($user['id']);
         $photos  = Photo::getByUserId($user['id']);
 
-        // Interest tags
+        // Interest tags (grouped by category)
         $allInterests = Profile::getAllInterests();
         $userInterestIds = Profile::getUserInterestIds($user['id']);
+        $groupedInterests = [];
+        foreach ($allInterests as $tag) {
+            $groupedInterests[$tag['category']][] = $tag;
+        }
 
         // Deal-breakers
         $dealbreakers = Profile::getDealbreakers($user['id']);
         $isPremium = (bool)(\App\Models\User::findById($user['id'])['is_premium'] ?? false);
 
         View::render('profile/edit', [
-            'profile'          => $profile,
-            'photos'           => $photos,
-            'allInterests'     => $allInterests,
-            'userInterestIds'  => $userInterestIds,
-            'dealbreakers'     => $dealbreakers,
-            'isPremium'        => $isPremium,
+            'profile'           => $profile,
+            'photos'            => $photos,
+            'allInterests'      => $allInterests,
+            'groupedInterests'  => $groupedInterests,
+            'userInterestIds'   => $userInterestIds,
+            'dealbreakers'      => $dealbreakers,
+            'isPremium'         => $isPremium,
         ]);
     }
 

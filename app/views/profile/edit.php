@@ -105,13 +105,7 @@
     <form method="POST" action="/dateapp/profile/interests" class="form-card interests-section">
         <?= \App\Core\CSRF::field() ?>
         <h3>My Interests <span class="text-muted">(pick up to 10)</span></h3>
-        <?php
-            $grouped = [];
-            foreach (($allInterests ?? []) as $tag) {
-                $grouped[$tag['category']][] = $tag;
-            }
-        ?>
-        <?php foreach ($grouped as $category => $tags): ?>
+        <?php foreach (($groupedInterests ?? []) as $category => $tags): ?>
             <div class="interest-category">
                 <h4><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></h4>
                 <div class="interest-grid">

@@ -17,4 +17,16 @@ return [
 
     // Swipe limits (free tier)
     'free_daily_swipes' => 50,
+
+    // ELO K-factors for score adjustments
+    'elo_k_like'      => 16,
+    'elo_k_superlike'  => 24,
+    'elo_k_dislike'    => 8,
+
+    // Anti-ghosting
+    'ghost_nudge_hours' => 72,
+
+    // Profile boost defaults
+    'boost_duration_minutes' => 30,
+    'boost_multiplier'       => 3.0,
 ];

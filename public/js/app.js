@@ -169,10 +169,13 @@
         document.querySelector('.swipe-btn-nope')?.addEventListener('click', () => triggerSwipe('pass'));
         document.querySelector('.swipe-btn-super')?.addEventListener('click', () => triggerSwipe('super_like'));
 
+        let swipeLocked = false;
+
         function triggerSwipe(direction) {
             const card = getTopCard();
-            if (!card) return;
+            if (!card || swipeLocked) return;
             if (getRemaining() <= 0) { showLimitReached(); return; }
+            swipeLocked = true;
             const flyX = direction === 'pass' ? -1000 : 1000;
             card.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
             card.style.transform = `translateX(${flyX}px) rotate(${flyX * 0.04}deg)`;
@@ -190,13 +193,14 @@
         function sendSwipe(userId, type) {
             ajax('POST', '/swipe', { target_id: userId, type: type })
                 .then(data => {
+                    swipeLocked = false;
                     if (data.limit_reached) {
                         showLimitReached();
                         return;
                     }
                     if (data.match) showMatchModal(data);
                 })
-                .catch(() => {});
+                .catch(() => { swipeLocked = false; });
         }
 
         function updateCounter(delta) {
@@ -289,36 +293,27 @@
             // Keep lastMsgId in sync so polling skips this message
             if (msg.id && Number(msg.id) > Number(lastMsgId)) lastMsgId = msg.id;
         }
+
+        // Send message (defined inside initChat to reuse appendMessage)
+        window.sendMessage = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            if (!matchId || !input.value.trim()) return false;
+
+            const body = input.value.trim();
+            input.value = '';
+
+            ajax('POST', '/chat/send', { match_id: matchId, body: body })
+                .then(data => {
+                    if (data.success && data.message) {
+                        appendMessage(data.message);
+                        messages.scrollTop = messages.scrollHeight;
+                    }
+                })
+                .catch(() => {});
+            return false;
+        };
     }
-
-    window.sendMessage = function(e) {
-        e.preventDefault();
-        const form = document.getElementById('chatForm');
-        const input = document.getElementById('chatInput');
-        const messages = document.getElementById('chatMessages');
-        const matchId = messages?.dataset.matchId;
-        if (!matchId || !input.value.trim()) return false;
-
-        const body = input.value.trim();
-        input.value = '';
-
-        ajax('POST', '/chat/send', { match_id: matchId, body: body })
-            .then(data => {
-                if (data.success && data.message) {
-                    // Dedup: skip if already appended by polling
-                    if (data.message.id && messages.querySelector('[data-msg-id="' + data.message.id + '"]')) return;
-                    const div = document.createElement('div');
-                    div.className = 'chat-bubble chat-bubble-mine';
-                    div.dataset.msgId = data.message.id;
-                    const text = data.message.body || data.message.message_text || '';
-                    div.innerHTML = '<p>' + escapeHtml(text) + '</p><span class="chat-time">' + formatTime(data.message.created_at || data.message.sent_at) + '</span>';
-                    messages.appendChild(div);
-                    messages.scrollTop = messages.scrollHeight;
-                }
-            })
-            .catch(() => {});
-        return false;
-    };
 
     window.toggleChatMenu = function() {
         document.getElementById('chatMenu')?.classList.toggle('show');
